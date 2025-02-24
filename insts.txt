@@ -11,27 +11,22 @@
 90
 A0
 B0
-C0
-D0
-E0
+C0 MOVri MOVri MOVri MOVri MOVri MOVri MOVri MOVri
+D0 MOVrb MOVrb MOVrb MOVrb MOVrb MOVrb MOVrb MOVrb MOVrw MOVrw MOVrw MOVrw MOVrw MOVrw MOVrw MOVrw
+E0 MOVbr MOVbr MOVbr MOVbr MOVbr MOVbr MOVbr MOVbr MOVwr MOVwr MOVwr MOVwr MOVwr MOVwr MOVwr MOVwr
 F0
 
-00 000 000
-^^     ^^^
-
-00(000) -- MOV
-  00 000 RRR - 00 - MOV R imm16
-  00 010 RRR - 00 - MOV R byte[imm16]
-  00 011 RRR - 00 - MOV R word[imm16]
-  00 100 RRR - 00 - MOV byte[imm16] R
-  00 101 RRR - 00 - MOV word[imm16] R
-; 0010 0000
-mov %bx @0041 ; 20 41 00
-
-01100 -- ADD
+01100 -- ADD -- 44 ~ 6C
   01 000 100 - 44 - ADD rc
   01 001 100 - 4C - ADD reg imm16
   01 010 100 - 54 - ADD reg byte[imm16]
   01 011 100 - 5C - ADD reg word[imm16]
   01 100 100 - 64 - ADD byte[imm16] imm16
   01 101 100 - 6C - ADD word[imm16] imm16
+
+11(000) -- MOV -- C0 ~ EF
+  11 000 RRR - 00 - MOV R imm16
+  11 010 RRR - 00 - MOV R byte[imm16]
+  11 011 RRR - 00 - MOV R word[imm16]
+  11 100 RRR - 00 - MOV byte[imm16] R
+  11 101 RRR - 00 - MOV word[imm16] R
