@@ -3,9 +3,9 @@
 
 #include <SDL2/SDL.h>
 
-#define VGASIZE 64600 // The size of the VGA for the 340x190 screen
-#define WINW 340
-#define WINH 190
+#define WINW 640
+#define WINH 480
+#define VGASIZE WINW*WINH // 307,200
 
 #define gravno_start \
   SDL_Init(SDL_INIT_EVERYTHING); \
@@ -20,8 +20,7 @@
   SDL_Quit();
 
 struct gc_gg16 {
-  U8 vga[65536];
-  U8 status;
+  U8 status; // besplatno
 };
 typedef struct gc_gg16 gc_gg16;
 
