@@ -92,9 +92,20 @@ U8 HLT(GC* gc) {
   return 1;
 }
 
-// 4C           add reg imm16
+// 41           int imm8
+U8 INT(GC* gc) {
+  if (!IF(gc->PS)) goto intend;
+  if (gc->mem[gc->PC+1] >= 0x80) { // Custom interrupt
+    gc->PC = Read24(gc, ((gc->mem[gc->PC+1]-0x80+1)*3-3)+0xFF0000);
+    return 0;
+  }
+  intend: gc->PC += 2;
+  return 0;
+}
+
+// 48-4F        add reg imm16
 U8 ADDri(GC* gc) {
-  gc->reg[(gc->mem[gc->PC]-0xC0) % 8].word += ReadWord(gc, gc->PC+1);
+  gc->reg[(gc->mem[gc->PC]-0x48) % 8].word += ReadWord(gc, gc->PC+1);
   gc->PC += 3;
   return 0;
 }
@@ -144,7 +155,7 @@ U8 (*INSTS[256])() = {
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &UNK  , &INT  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
@@ -218,15 +229,6 @@ U8 Exec(GC* gc, const U32 memsize) {
 execloop:
     exc = (INSTS[gc->mem[gc->PC]])(gc);
     RegDump(gc);
-    for (U32 i = 0; i < 0x10; i++) {
-      printf("%02X ", gc->mem[i]);
-    }
-    puts("\b");
-    for (U32 i = 0x690100; i < 0x690110; i++) {
-      printf("%02X ", gc->mem[i]);
-    }
-    puts("\b");
-    getchar();
     if (exc != 0) return gc_errno;
     goto execloop;
   return exc;
