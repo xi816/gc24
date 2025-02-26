@@ -2,4 +2,4 @@ Memory:
   $000000-$00FFFF      Shared general purpose memory
   $400000-$404B00      VGA
   $FE0000-$FEFFFF      Stack
-  $FF0000-$FFFFFF
+  $FF0000-$FFFFFF      Interrupt tables

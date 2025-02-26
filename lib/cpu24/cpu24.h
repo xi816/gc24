@@ -42,10 +42,6 @@ U32 FullSP(GC* gc) {
   return (gc->SPAGE << 16) + gc->reg[SP].word;
 }
 
-gcbyte ReadByte(GC* gc, U32 addr) {
-  return gc->mem[addr];
-}
-
 gcword ReadWord(GC* gc, U32 addr) {
   return (gc->mem[addr]) + (gc->mem[addr+1] << 8);
 }
@@ -99,6 +95,14 @@ U8 INT(GC* gc) {
   if (gc->mem[gc->PC+1] >= 0x80) { // Custom interrupt
     gc->PC = Read24(gc, ((gc->mem[gc->PC+1]-0x80+1)*3-3)+0xFF0000);
     return 0;
+  }
+  switch (gc->mem[gc->PC+1]) {
+  case INT_WRITE:
+    putchar(StackPop(gc));
+    break;
+  default:
+    fprintf(stderr, "gc24: \033[91mIllegal\033[0m hardware interrupt: $%02X\n", gc->mem[gc->PC+1]);
+    return 1;
   }
   intend: gc->PC += 2;
   return 0;
@@ -242,8 +246,8 @@ U8 Exec(GC* gc, const U32 memsize) {
   U8 exc = 0;
   execloop:
     exc = (INSTS[gc->mem[gc->PC]])(gc);
-    StackDump(gc, 12);
-    RegDump(gc);
+    // StackDump(gc, 12);
+    // RegDump(gc);
     if (exc != 0) return gc_errno;
     goto execloop;
   return exc;
