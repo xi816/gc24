@@ -95,7 +95,7 @@ U8 main(I32 argc, I8** argv) {
       old_st;
       return 1;
     }
-    fread(gc.mem, 1, 65536, fl);
+    fread(gc.mem+0x030000, 1, 65536, fl);
     fclose(fl);
     if (disasmmode) {
       if (disasm(gc.mem, 65536, stdout) == 1) {

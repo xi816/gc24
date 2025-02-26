@@ -61,16 +61,17 @@ U0 WriteWord(GC* gc, U32 addr, U16 val) {
   gc->mem[addr+1] = (val >> 8);
 }
 
-gcbyte StackPush(GC* gc, U16 val) {
-  gc->mem[FullSP(gc)] = (val >> 8);
-  gc->mem[FullSP(gc)-1] = (val % 256);
-  gc->reg[SP].word -= 2;
+gcbyte StackPush(GC* gc, U32 val) {
+  gc->mem[FullSP(gc)] = (val >> 16);
+  gc->mem[FullSP(gc)-1] = ((val >> 8) % 256);
+  gc->mem[FullSP(gc)-2] = (val % 256);
+  gc->reg[SP].word -= 3;
   return 0;
 }
 
 gcword StackPop(GC* gc) {
-  gc->reg[SP].word += 2;
-  return ReadWord(gc, FullSP(gc)-1);
+  gc->reg[SP].word += 3;
+  return Read24(gc, FullSP(gc)-2);
 }
 
 gcrc_t ReadRegClust(U8 clust) { // Read a register cluster
@@ -107,6 +108,20 @@ U8 INT(GC* gc) {
 U8 ADDri(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0x48) % 8].word += ReadWord(gc, gc->PC+1);
   gc->PC += 3;
+  return 0;
+}
+
+// B0           push imm16
+U8 PUSHi(GC* gc) {
+  StackPush(gc, Read24(gc, gc->PC+1));
+  gc->PC += 4;
+  return 0;
+}
+
+// B5           push reg
+U8 PUSHr(GC* gc) {
+  StackPush(gc, gc->reg[gc->mem[gc->PC+1]].word);
+  gc->PC += 2;
   return 0;
 }
 
@@ -162,7 +177,7 @@ U8 (*INSTS[256])() = {
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw,
   &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr,
@@ -196,7 +211,7 @@ U8 PG0F(GC* gc) {   // 0FH
 U0 Reset(GC* gc) {
   gc->reg[SP].word = 0x00FFFF;
   gc->reg[BP].word = 0x00FFFF;
-  gc->PC = 0x000000;
+  gc->PC = 0x030000;
 
   gc->PS = 0b01000000;
 }
@@ -209,8 +224,7 @@ U0 PageDump(GC* gc, U8 page) {
 }
 
 U0 StackDump(GC* gc, U16 c) {
-  printf("SP: %04X\n", gc->reg[SP].word);
-  for (U16 i = 0xF000; i > 0xF000-c; i--) {
+  for (U32 i = (gc->SPAGE*65536)+0xFFFF; i > (gc->SPAGE*65536)+0xFFFF-c; i--) {
     printf("%04X: %02X\n", i, gc->mem[i]);
   }
 }
@@ -226,8 +240,9 @@ U0 RegDump(GC* gc) {
 
 U8 Exec(GC* gc, const U32 memsize) {
   U8 exc = 0;
-execloop:
+  execloop:
     exc = (INSTS[gc->mem[gc->PC]])(gc);
+    StackDump(gc, 12);
     RegDump(gc);
     if (exc != 0) return gc_errno;
     goto execloop;
