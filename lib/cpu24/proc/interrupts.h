@@ -6,7 +6,6 @@
 #define INT_RESET        0x04 // reset the CPU
 
 // Videobuffer
-#define INT_VIDEO_WRITE  0x0C // set vga[si] to ax
 #define INT_VIDEO_FLUSH  0x11 // flush the videobuffer
 #define INT_RAND         0x21 // get random number to dx
 #define INT_WAIT         0x22 // wait dx milliseconds

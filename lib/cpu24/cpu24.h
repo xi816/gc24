@@ -97,8 +97,30 @@ U8 INT(GC* gc) {
     return 0;
   }
   switch (gc->mem[gc->PC+1]) {
+  case INT_EXIT:
+    gc_errno = StackPop(gc);
+    return 1;
+  case INT_READ:
+    StackPush(gc, getchar());
+    break;
   case INT_WRITE:
     putchar(StackPop(gc));
+    fflush(stdout);
+    break;
+  case INT_RESET:
+    Reset(gc);
+    return 0;
+  case INT_VIDEO_FLUSH:
+    GGpage(gc, gc->renderer);
+    break;
+  case INT_RAND:
+    gc->reg[DX].word = rand() % 65536;
+    break;
+  case INT_DATE:
+    gc->reg[DX].word = GC_GOVNODATE();
+    break;
+  case INT_WAIT:
+    usleep((U32)(gc->reg[DX].word)*1000); // the maximum is about 65.5 seconds
     break;
   default:
     fprintf(stderr, "gc24: \033[91mIllegal\033[0m hardware interrupt: $%02X\n", gc->mem[gc->PC+1]);
@@ -112,6 +134,12 @@ U8 INT(GC* gc) {
 U8 ADDri(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0x48) % 8].word += ReadWord(gc, gc->PC+1);
   gc->PC += 3;
+  return 0;
+}
+
+// 86           jmp imm24
+U8 JMPa(GC* gc) {
+  gc->PC = Read24(gc, gc->PC+1);
   return 0;
 }
 
@@ -178,7 +206,7 @@ U8 (*INSTS[256])() = {
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
