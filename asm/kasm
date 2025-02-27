@@ -32,7 +32,7 @@ DIG    = "0123456789";
 WHI    = " \r\0\t";
 DIGEXT = "0123456789ABCDEF";
 KEY2   = [
-  "mov", "nop", "int"
+  "mov", "nop", "int", "hlt"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -268,6 +268,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "MOVbr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRB) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "MOVwr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRW) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "INT8",  toks[pos+1][1], pos + 2, pc + 2)                   if ((b == "int") and (toks[pos+1][0] == T_INT)) else
+   (ASTINS, "HLT",   0, pos + 1, pc + 1)                                if (b == "hlt") else
    (print("kasm: unknown instruction %s" % b) and exit(1))
   );
 
@@ -287,7 +288,7 @@ def Parse(toks: list, filename: str, expm: int) -> list:
     elif (toks[pos][0] == T_EOL):
       pos += 1;
     else:
-      print("kasm: unknown token: %s" % HUMAN_TOKS[toks[pos][0]]);
+      print("kasm: unknown token: %s %s" % (HUMAN_TOKS[toks[pos][0]], toks[pos][1]));
       exit(1);
   ast.append([ASTEOF, 0, 0, pc]);
   if (expm):
@@ -302,11 +303,12 @@ As24   = lambda a: ((a & 0xFF), ((a >> 8) & 0xFF), (a >> 16));
 
 CompileInst = lambda prog, b, pos: \
   (((0xC0+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "MOVri") else
-   ((0xD0+b[2][0], *As24(b[2][1])), pos+1) if (b[1] == "MOVrb") else
-   ((0xD8+b[2][0], *As24(b[2][1])), pos+1) if (b[1] == "MOVrw") else
-   ((0xE0+b[2][1], *As24(b[2][0])), pos+1) if (b[1] == "MOVbr") else
-   ((0xE8+b[2][1], *As24(b[2][0])), pos+1) if (b[1] == "MOVwr") else
-   ((0x41, b[2]), pos+1)                   if (b[1] == "INT8") else
+   ((0xD0+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "MOVrb") else
+   ((0xD8+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "MOVrw") else
+   ((0xE0+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "MOVbr") else
+   ((0xE8+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "MOVwr") else
+   ((0x41, b[2]), pos+1)                     if (b[1] == "INT8") else
+   ((0x00,), pos+1)                          if (b[1] == "HLT") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 
@@ -332,10 +334,6 @@ def IKasm() -> int:
     print(end="\033[97m");
     tokens, exitcode = Lex(cd, "input");
     ast, labs = Parse(tokens, "input", False);
-    # except:
-    #   ast = [(ASTEOF,)];
-    #   labs = dict();
-    PrintTokens(tokens);
     c, exitcode = CompileGC24(ast, labs);
     print(end="\033[96m");
     for i in c:
@@ -390,8 +388,6 @@ def main(argc: int, argv: list) -> int:
     print("Fatal error. Can't compile");
     exit(tokens);
   ast, labs = Parse(tokens, progname, exportmode);
-  PrintTokens(tokens);
-  PrintAst(ast);
   if (diskmode):
     labs = OffsetLabs(labs, 0x3000);
   if (exportmode):

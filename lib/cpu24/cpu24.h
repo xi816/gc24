@@ -273,9 +273,9 @@ U0 RegDump(GC* gc) {
 U8 Exec(GC* gc, const U32 memsize) {
   U8 exc = 0;
   execloop:
+    getchar();
     exc = (INSTS[gc->mem[gc->PC]])(gc);
-    // StackDump(gc, 12);
-    // RegDump(gc);
+    RegDump(gc);
     if (exc != 0) return gc_errno;
     goto execloop;
   return exc;

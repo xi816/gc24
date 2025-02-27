@@ -1,4 +1,4 @@
-// GPU identificator: GovnGraphics 16
+// GPU identificator: GovnGraphics 6970
 #include <cpu24/gpuh.h>
 
 ggrgb rgbv[] = {
@@ -47,15 +47,11 @@ U0 GGinit(gc_gg16* gg, SDL_Renderer* r) {
   SDL_RenderClear(r);
 }
 
-U0 GGtype(GC* gc, SDL_Renderer* r, U16 pos, U8 byte) {
-  gc->mem[0x400000+pos] = (byte << 4) + (byte);
-}
-
 U0 GGpage(GC* gc, SDL_Renderer* r) {
   U8 byte;
-  for (U16 i = 0; i < VGASIZE; i++) {
+  for (U32 i = 0; i < VGASIZE; i++) {
     byte = gc->mem[0x400000+i];
-    SDL_SetRenderDrawColor(r, rgbv[byte/16].r, rgbv[byte/16].g, rgbv[byte/16].b, 0xFF);
+    SDL_SetRenderDrawColor(r, rgbv[byte%16].r, rgbv[byte%16].g, rgbv[byte%16].b, 0xFF);
     SDL_RenderDrawPoint(r, i%WINW, i/WINW);
     SDL_RenderDrawPoint(r, (i+1)%WINW, (i+1)/WINW);
   }
