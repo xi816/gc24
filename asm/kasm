@@ -1,0 +1,408 @@
+#!/usr/bin/python3
+
+import sys;
+import time;
+
+T_INS   = 0x00;
+T_INT   = 0x01;
+T_LAB   = 0x02;
+T_REG   = 0x03;
+T_DREG  = 0x04;
+T_ID    = 0x05;
+T_ADDRB = 0x06;
+T_ADDRW = 0x07;
+T_ADDRT = 0x08;
+T_BYTE  = 0x09;
+T_STR   = 0x0A;
+T_MCR   = 0x0B;
+T_EOL   = 0x0C;
+T_EOF   = 0x0D;
+
+ASTINS   = 0x00;
+ASTBYTES = 0x01;
+ASTRES   = 0x02;
+ASTEOF   = 0x04;
+
+HUMAN_TOKS = ["inst", "int", "label", "reg", "*reg", "id", "#addr", "@addr", "*addr", "byte", "string", "mcr", "eol", "eof"];
+HUMAN_AST  = ["INST", "BYTES", "RESERVE", "BRK-HANDLER", "EOF"];
+
+LET    = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+LETEXT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy0123456789z-_.";
+DIG    = "0123456789";
+WHI    = " \r\0\t";
+DIGEXT = "0123456789ABCDEF";
+KEY2   = [
+  "mov", "nop", "int"
+];
+KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
+
+def PrintTokens(toks: list):
+  for i,j in enumerate(toks):
+    if (len(j) == 2):
+      print(f"{i}: {HUMAN_TOKS[j[0]]} {j[1]}");
+    elif (len(j) == 1):
+      print(f"{i}: {HUMAN_TOKS[j[0]]}");
+
+def PrintAst(toks: list):
+  for i in toks:
+    print(f"${hex(i[3])[2:].upper():0>4}: {HUMAN_AST[i[0]]} {i[1]} {i[2]}");
+
+def PrintLabs(labs: dict):
+  print("\nLabel symbols:");
+  for i in labs:
+    print(f"{i+':': <30}${hex(labs[i])[2:].upper():0>4}");
+
+def ExportLabs(filename: str, labs: dict, output_file: str):
+  with open(output_file, "w") as fl:
+    for i in labs:
+      fl.write(f"{i}	{hex(labs[i])[2:].upper():0>4}\n");
+
+def ImportLabs(filename: str, labs: dict, import_file: str):
+  with open(import_file, "r") as fl:
+    for line in fl.read().split("\n"):
+      if (line):
+        symbol,val = line.split(chr(9));
+        labs[symbol] = int(val, base=16);
+  return labs;
+
+def OffsetLabs(labs: dict, offset: int):
+  for i in labs:
+    labs[i] += offset;
+  return labs;
+
+# Lexer:
+def Lex(prog: str, filename: str):
+  prog += "\n\0";
+  labelscope: str  = "";
+  proglen:    int  = len(prog);
+  linenum:    int  = 1;
+  toks:       list = [];
+  pos:        int  = 0;
+  buf:        str  = "";
+  while (True):
+    if (prog[pos] == "\0"):
+      toks.append((T_EOL,));
+      toks.append((T_EOF,));
+      return toks, 0;
+    elif (prog[pos] == ";"):
+      pos += 1;
+      while (prog[pos] != "\n"):
+        pos += 1;
+    elif ((prog[pos] == "/") and (prog[pos+1] == "/")):
+      pos += 1;
+      while (prog[pos] != "\n"):
+        pos += 1;
+    elif ((prog[pos] == "/") and (prog[pos+1] == "*")):
+      pos += 1;
+      while ((prog[pos] != "*") or (prog[pos+1] != "/")):
+        pos += 1;
+      pos += 1;
+    elif (prog[pos] in WHI):
+      pos += 1;
+    elif (prog[pos] == "\n"):
+      if ((toks) and (toks[-1][0] != T_EOL)):
+        toks.append((T_EOL,));
+      pos += 1;
+      linenum += 1;
+    elif (prog[pos] in "."): # Local label
+      pos += 1;
+      while (prog[pos] in LETEXT):
+        buf += prog[pos];
+        pos += 1;
+      if (prog[pos] == ":"):
+        toks.append((T_LAB, labelscope+"."+buf));
+        pos += 1;
+      else:
+        toks.append((T_ID, labelscope+"."+buf));
+      buf = "";
+    elif (prog[pos] in "%"):
+      pos += 1;
+      while (prog[pos] in LET):
+        buf += prog[pos];
+        pos += 1;
+      pos += 1;
+      if (buf in KEYR):
+        toks.append((T_REG, KEYR.index(buf)));
+      else:
+        print(f"kasm: {filename}:{linenum}:1: Unknown register {buf}");
+        exit(1);
+      buf = "";
+      pos -= 1;
+    elif (prog[pos] in DIG):
+      while (prog[pos] in DIG):
+        buf += prog[pos];
+        pos += 1;
+      toks.append((T_INT, int(buf, base=10)));
+      buf = "";
+    elif (prog[pos] == "\""):
+      pos += 1;
+      while (prog[pos] != "\""):
+        if (prog[pos] == "$"):
+          buf += "\n";
+        elif (prog[pos] == "\n"):
+          print(f"kasm: {filename}:{linenum}:1: Unterminated string literal");
+          exit(1);
+        elif ((prog[pos] == "\\") and (prog[pos+1] == "\"")):
+          buf += "\"";
+          pos += 1;
+        elif (prog[pos] == "^"):
+          if (ord(prog[pos+1]) in range(64, 97)):
+            buf += chr(ord(prog[pos+1])-64);
+          elif (prog[pos+1] in "^$"):
+            buf += prog[pos+1];
+          pos += 1;
+        else:
+          buf += prog[pos];
+        pos += 1;
+      pos += 1;
+      toks.append((T_STR, buf.encode()));
+      buf = "";
+    elif (prog[pos] == "'"):
+      pos += 1;
+      if (prog[pos] == "$"):
+        buf = 10;
+      elif ((prog[pos] == "\\") and (prog[pos+1] == "\"")):
+        buf = 34;
+        pos += 2;
+      elif (prog[pos] == "^"):
+        if (ord(prog[pos+1]) in range(64, 97)):
+          buf = ord(prog[pos+1])-64;
+        elif (prog[pos+1] in "^$"):
+          buf = ord(prog[pos+1]);
+        pos += 1;
+      else:
+        buf = ord(prog[pos]);
+      pos += 1;
+      if (prog[pos] != "'"):
+        print(f"kasm: {filename}:{linenum}:1: Unterminated character literal");
+        exit(1);
+      pos += 1;
+      toks.append((T_INT, buf));
+      buf = "";
+    elif (prog[pos] == "^"):
+      pos += 1;
+      while (prog[pos] in DIGEXT):
+        buf += prog[pos];
+        pos += 1;
+      pos += 1;
+      toks.append((T_INT, int(buf, base=16)));
+      buf = "";
+      # cpos += 1;
+    elif (prog[pos] == "$"):
+      pos += 1;
+      while (prog[pos] in DIGEXT):
+        buf += prog[pos];
+        pos += 1;
+      toks.append((T_INT, int(buf, base=16)));
+      buf = "";
+    elif (prog[pos] == "#"):
+      pos += 1;
+      while (prog[pos] in DIGEXT):
+        buf += prog[pos];
+        pos += 1;
+      toks.append((T_ADDRB, int(buf, base=16)));
+      buf = "";
+    elif (prog[pos] == "@"):
+      pos += 1;
+      while (prog[pos] in DIGEXT):
+        buf += prog[pos];
+        pos += 1;
+      toks.append((T_ADDRW, int(buf, base=16)));
+      buf = "";
+    elif (prog[pos] == "*"):
+      pos += 1;
+      regop = 0;
+      if (prog[pos] == "%"):
+        regop = 1;
+        pos += 1;
+      while (prog[pos] in LETEXT):
+        buf += prog[pos];
+        pos += 1;
+      if (regop): # Dereferncing a register bro what :/
+        toks.append((T_DREG, KEYR.index(buf)));
+      else:
+        toks.append((T_IDD, buf));
+      buf = "";
+    elif (prog[pos] in LET):
+      while (prog[pos] in LETEXT):
+        buf += prog[pos];
+        pos += 1;
+      if (prog[pos] == ":"):
+        toks.append((T_LAB, buf));
+        labelscope = buf;
+        pos += 1;
+      else:
+        if (buf in KEY2):
+          toks.append((T_INS, buf));
+        elif (buf == "bytes"):
+          toks.append((T_BYTE, 0));
+        elif (buf == "reserve"):
+          toks.append((T_MCR, "reserve"));
+        elif (buf == "extern"):
+          toks.append((T_MCR, "extern"));
+        else:
+          toks.append((T_ID, buf));
+      buf = "";
+    else:
+      print(f"\033[31mUnknown\033[0m character {hex(ord(prog[pos]))[2:].upper():0>2}");
+      print(f"\033[33m  Note:\033[0m at position {hex(pos)[2:]:0>4}h");
+      print(f"\033[33m  Note:\033[0m at position {pos}");
+      print(f"\033[33m  Note:\033[0m `{prog[pos]}`");
+      exit(1);
+  return [], 1;
+
+def FetchLabels(prog: list, disk: bool):
+  labs = dict();
+  for i in prog:
+    if (i[0] == T_LAB):
+      labs[i[1]] = i[2]+(0x090000*disk);
+  return labs;
+
+def RemEmpty(prog: str):
+  return "\n".join([i for i in prog.split("\n") if i]);
+
+ParseInst = lambda toks, b, pos, pc: \
+  ((ASTINS, "MOVri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 3) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "MOVrb", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRB)) else
+   (ASTINS, "MOVrw", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRW)) else
+   (ASTINS, "MOVbr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRB) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "MOVwr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRW) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "INT8",  toks[pos+1][1], pos + 2, pc + 2)                   if ((b == "int") and (toks[pos+1][0] == T_INT)) else
+   (print("kasm: unknown instruction %s" % b) and exit(1))
+  );
+
+# Parser:
+def Parse(toks: list, filename: str, expm: int) -> list:
+  labels: dict = {};
+  ast:    list = [];
+  pos:    int  = 0;
+  pc:     int  = 0;
+  while (toks[pos][0] != T_EOF):
+    if (toks[pos][0] == T_INS): # Parse an instruction
+      asttype, astvalue, astop, pos, pc = ParseInst(toks, toks[pos][1], pos, pc);
+      ast.append([asttype, astvalue, astop, pc]); 
+    elif (toks[pos][0] == T_LAB): # Parse a label
+      labels[toks[pos][1]] = pc;
+      pos += 1;
+    elif (toks[pos][0] == T_EOL):
+      pos += 1;
+    else:
+      print("kasm: unknown token: %s" % HUMAN_TOKS[toks[pos][0]]);
+      exit(1);
+  ast.append([ASTEOF, 0, 0, pc]);
+  if (expm):
+    print(f"\033[92m{filename}: exporting {pc} bytes\033[0m");
+  else:
+    print(f"{filename}: program size: {pc} bytes");
+  return ast, toks;
+
+# Little endian
+AsWord = lambda a: ((a & 0xFF), (a >> 8));
+As24   = lambda a: ((a & 0xFF), ((a >> 8) & 0xFF), (a >> 16));
+
+CompileInst = lambda prog, b, pos: \
+  (((0xC0+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "MOVri") else
+   ((0xD0+b[2][0], *As24(b[2][1])), pos+1) if (b[1] == "MOVrb") else
+   ((0xD8+b[2][0], *As24(b[2][1])), pos+1) if (b[1] == "MOVrw") else
+   ((0xE0+b[2][1], *As24(b[2][0])), pos+1) if (b[1] == "MOVbr") else
+   ((0xE8+b[2][1], *As24(b[2][0])), pos+1) if (b[1] == "MOVwr") else
+   ((0x41, b[2]), pos+1)                   if (b[1] == "INT8") else
+   [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
+  );
+
+# Compiler:
+def CompileGC24(prog: list, labs: dict):
+  code = bytearray();
+  pos = 0;
+  while (prog[pos][0] != ASTEOF):
+    if (prog[pos][0] == ASTINS):
+      compbytes, pos = CompileInst(prog, prog[pos], pos);
+      if (pos == 0x1_00_0000): exit(1);
+      code.extend(compbytes);
+    else:
+      print("kasm: unknown ast node: %s" % HUMAN_AST[prog[pos][0]]);
+      exit(1);
+  return code, 0;
+
+def IKasm() -> int:
+  print("interactive kasm");
+  while (1):
+    cd = input(">>> \033[32m");
+    if (cd == "exit"): exit(0);
+    print(end="\033[97m");
+    tokens, exitcode = Lex(cd, "input");
+    ast, labs = Parse(tokens, "input", False);
+    # except:
+    #   ast = [(ASTEOF,)];
+    #   labs = dict();
+    PrintTokens(tokens);
+    c, exitcode = CompileGC24(ast, labs);
+    print(end="\033[96m");
+    for i in c:
+      print(end="%02X " % i);
+    print("\b\033[0m");
+  exit(0);
+
+def main(argc: int, argv: list) -> int:
+  diskmode = False;
+  exportmode = False;
+  if (argc == 1):
+    print("No arguments given");
+    return 1;
+  elif (argc == 2):
+    print("No binary filename given");
+    return 1;
+  argp: int = 1;
+  imp_files = [];
+  while (argp < argc):
+    match (argv[argp]):
+      case "-export":
+        exportmode = 1;
+        argp += 1;
+      case "-import":
+        imp_files.append(argv[argp+1]);
+        argp += 2;
+      case "-d":
+        diskmode = True;
+        argp += 1;
+      case "-i":
+        IKasm();
+        argp += 1;
+      case _:
+        progname = argv[argp];
+        outname = argv[argp+1];
+        break;
+
+  if (argc == 3):
+    progname = argv[1];
+    outname = argv[2];
+  # elif (argc == 4):
+  #   print(f"\033[31mUnknown\033[0m argument `{argv[1]}`");
+  #   return 1;
+  #   progname = argv[2];
+  #   outname = argv[3];
+
+  with open(progname, "r") as fl:
+    src = fl.read();
+  src = RemEmpty(src)+"\0";
+  tokens, exitcode = Lex(src, progname);
+  if (type(tokens[1]) is int):
+    print("Fatal error. Can't compile");
+    exit(tokens);
+  ast, labs = Parse(tokens, progname, exportmode);
+  PrintTokens(tokens);
+  PrintAst(ast);
+  if (diskmode):
+    labs = OffsetLabs(labs, 0x3000);
+  if (exportmode):
+    ExportLabs(progname, labs, outname);
+    exit(1);
+  for imp_file in imp_files:
+    labs = ImportLabs(progname, labs, imp_file);
+  c, exitcode = CompileGC24(ast, labs);
+  with open(outname, "wb") as fl:
+    fl.write(c);
+
+  return 0;
+
+sys.exit(main(len(sys.argv), sys.argv));
