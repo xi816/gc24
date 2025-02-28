@@ -3,7 +3,7 @@
 10
 20
 30
-40       INT               ADDc                    ADDri ADDri ADDri ADDri ADDri ADDri ADDri ADDri
+40       INT                                 ADDrc ADDri ADDri ADDri ADDri ADDri ADDri ADDri ADDri
 50 ADDrb ADDrb ADDrb ADDrb ADDrb ADDrb ADDrb ADDrb ADDrw ADDrw ADDrw ADDrw ADDrw ADDrw ADDrw ADDrw
 60                         ADDbi                                           ADDwi
 70

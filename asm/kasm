@@ -32,7 +32,7 @@ DIG    = "0123456789";
 WHI    = " \r\0\t";
 DIGEXT = "0123456789ABCDEF";
 KEY2   = [
-  "mov", "nop", "int", "hlt"
+  "mov", "nop", "int", "hlt", "add"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -269,6 +269,8 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "MOVwr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRW) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "INT8",  toks[pos+1][1], pos + 2, pc + 2)                   if ((b == "int") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "HLT",   0, pos + 1, pc + 1)                                if (b == "hlt") else
+   (ASTINS, "ADDri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 3) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "ADDrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (print("kasm: unknown instruction %s" % b) and exit(1))
   );
 
@@ -309,6 +311,8 @@ CompileInst = lambda prog, b, pos: \
    ((0xE8+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "MOVwr") else
    ((0x41, b[2]), pos+1)                     if (b[1] == "INT8") else
    ((0x00,), pos+1)                          if (b[1] == "HLT") else
+   ((0x48+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "ADDri") else
+   ((0x47, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "ADDrc") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 
@@ -330,6 +334,9 @@ def IKasm() -> int:
   print("interactive kasm");
   while (1):
     cd = input(">>> \033[32m");
+    if (not cd):
+      print(end="\033[0m");
+      continue;
     if (cd == "exit"): exit(0);
     print(end="\033[97m");
     tokens, exitcode = Lex(cd, "input");
@@ -347,9 +354,9 @@ def main(argc: int, argv: list) -> int:
   if (argc == 1):
     print("No arguments given");
     return 1;
-  elif (argc == 2):
-    print("No binary filename given");
-    return 1;
+  # elif (argc == 2):
+  #   print("No binary filename given");
+  #   return 1;
   argp: int = 1;
   imp_files = [];
   while (argp < argc):
@@ -366,6 +373,7 @@ def main(argc: int, argv: list) -> int:
       case "-i":
         IKasm();
         argp += 1;
+        break;
       case _:
         progname = argv[argp];
         outname = argv[argp+1];

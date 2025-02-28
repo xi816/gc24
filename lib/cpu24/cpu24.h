@@ -3,9 +3,11 @@
 #include <cpu24/proc/interrupts.h>
 #include <cpu24/gpu.h>
 
-// CPU info:
-// Speed: 1THz
-// State: Holy
+/*
+  CPU info:
+  Speed: 5THz
+  State: Holy 2.0
+*/
 
 #define AX 0x00
 #define BX 0x01
@@ -130,6 +132,14 @@ U8 INT(GC* gc) {
   return 0;
 }
 
+// 47           add rc
+U8 ADDrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word += gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
 // 48-4F        add reg imm16
 U8 ADDri(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0x48) % 8].word += ReadWord(gc, gc->PC+1);
@@ -202,7 +212,7 @@ U8 (*INSTS[256])() = {
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &INT  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &UNK  , &INT  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &ADDrc, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
@@ -244,6 +254,10 @@ U0 Reset(GC* gc) {
   gc->reg[SP].word = 0x00FFFF;
   gc->reg[BP].word = 0x00FFFF;
   gc->PC = 0x030000;
+
+  // Reset the general purpose registers
+  for (U8 i = 0; i < 6; i++) 
+    gc->reg[i].word = 0x000000;
 
   gc->PS = 0b01000000;
 }
