@@ -33,6 +33,8 @@
 #define RESET_NF(ps) (ps &= 0b11111101)
 #define RESET_CF(ps) (ps &= 0b11111110)
 
+#define printh(c, s) printf("%02X" s, c)
+
 U8 gc_errno;
 
 U0 Reset(GC* gc);
@@ -79,7 +81,7 @@ gcrc_t ReadRegClust(U8 clust) { // Read a register cluster
 }
 
 U8 UNK(GC* gc) {    // Unknown instruction
-  fprintf(stderr, "\033[31mIllegal\033[0m instruction \033[33m%02X\033[0m\nAt position %04X\n", gc->mem[gc->PC], gc->PC);
+  fprintf(stderr, "\033[31mIllegal\033[0m instruction \033[33m%02X\033[0m\nAt position %06X\n", gc->mem[gc->PC], gc->PC);
   old_st_legacy;
   gc_errno = 1;
   return 1;
@@ -89,6 +91,52 @@ U8 UNK(GC* gc) {    // Unknown instruction
 // 00           hlt
 U8 HLT(GC* gc) {
   return 1;
+}
+
+// 20-27        inx reg
+U8 INXr(GC* gc) {
+  gc->reg[gc->mem[gc->PC]-0x20].word++;
+  gc->PC++;
+  return 0;
+}
+
+// 28-2F        inx reg
+U8 DEXr(GC* gc) {
+  gc->reg[gc->mem[gc->PC]-0x28].word--;
+  gc->PC++;
+  return 0;
+}
+
+// 30           inx #imm24
+U8 INXb(GC* gc) {
+  gc->mem[gc, gc->PC+1]++;
+  gc->PC += 4;
+  return 0;
+}
+
+// 32           dex #imm24
+U8 DEXb(GC* gc) {
+  gc->mem[gc, gc->PC+1]--;
+  gc->PC += 4;
+  return 0;
+}
+
+// 40           inx @imm24
+U8 INXw(GC* gc) {
+  U16 addr = Read24(gc, gc->PC+1);
+  U16 a = ReadWord(gc, addr)+1;
+  WriteWord(gc, addr, a);
+  gc->PC += 4;
+  return 0;
+}
+
+// 42           dex @imm24
+U8 DEXw(GC* gc) {
+  U16 addr = Read24(gc, gc->PC+1);
+  U16 a = ReadWord(gc, addr)-1;
+  WriteWord(gc, addr, a);
+  gc->PC += 4;
+  return 0;
 }
 
 // 41           int imm8
@@ -147,9 +195,129 @@ U8 ADDri(GC* gc) {
   return 0;
 }
 
+// 50-57        add reg byte[imm24]
+U8 ADDrb(GC* gc) {
+  gc->reg[(gc->mem[gc->PC]-0x50) % 8].word += gc->mem[Read24(gc, gc->PC+1)];
+  gc->PC += 4;
+  return 0;
+}
+
+// 58-5F        mov reg word[imm24]
+U8 ADDrw(GC* gc) {
+  gc->reg[(gc->mem[gc->PC]-0xD8) % 8].word += ReadWord(gc, Read24(gc, gc->PC+1));
+  gc->PC += 4;
+  return 0;
+}
+
+// 60-67        mov byte[imm24] reg
+U8 ADDbr(GC* gc) {
+  gc->mem[Read24(gc, gc->PC+1)] += gc->reg[(gc->mem[gc->PC]-0xE0) % 8].byte;
+  gc->PC += 4;
+  return 0;
+}
+
+// 68-6F        add word[imm24] reg
+U8 ADDwr(GC* gc) {
+  U16 addr = Read24(gc, gc->PC+1);
+  U16 w = ReadWord(gc, addr);
+  WriteWord(gc, addr, w+gc->reg[(gc->mem[gc->PC]-0xE8) % 8].word);
+  gc->PC += 4;
+  return 0;
+}
+
+// 70-7F        cmp reg imm16
+U8 CMPri(GC* gc) {
+  I16 val0 = gc->reg[(gc->mem[gc->PC]-0x70) % 8].word;
+  I16 val1 = ReadWord(gc, gc->PC+1);
+
+  if (!(val0 - val1))    SET_ZF(gc->PS);
+  else                   RESET_ZF(gc->PS);
+  if ((val0 - val1) < 0) SET_NF(gc->PS);
+  else                   RESET_NF(gc->PS);
+
+  gc->PC += 3;
+  return 0;
+}
+
 // 86           jmp imm24
 U8 JMPa(GC* gc) {
   gc->PC = Read24(gc, gc->PC+1);
+  return 0;
+}
+
+// A0           je imm24
+U8 JEa(GC* gc) {
+  if (ZF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+    RESET_ZF(gc->PS);
+  }
+  else gc->PC += 4;
+  return 0;
+}
+
+// A1           jne imm24
+U8 JNEa(GC* gc) {
+  if (!ZF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+  }
+  else gc->PC += 4;
+  return 0;
+}
+
+// A2           jc imm24
+U8 JCa(GC* gc) {
+  if (CF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+    RESET_CF(gc->PS);
+  }
+  else gc->PC += 4;
+  return 0;
+}
+
+// A3           jnc imm24
+U8 JNCa(GC* gc) {
+  if (!CF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+  }
+  else gc->PC += 4;
+  return 0;
+}
+
+// A4           js imm24
+U8 JSa(GC* gc) {
+  if (!NF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+  }
+  else gc->PC += 4;
+  return 0;
+}
+
+// A5           jn imm24
+U8 JNa(GC* gc) {
+  if (NF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+    RESET_NF(gc->PS);
+  }
+  else gc->PC += 4;
+  return 0;
+}
+
+// A6           ji imm24
+U8 JIa(GC* gc) {
+  if (IF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+    RESET_IF(gc->PS);
+  }
+  else gc->PC += 4;
+  return 0;
+}
+
+// A7           jni imm24
+U8 JNIa(GC* gc) {
+  if (!IF(gc->PS)) {
+    gc->PC = Read24(gc, gc->PC+1);
+  }
+  else gc->PC += 4;
   return 0;
 }
 
@@ -174,28 +342,36 @@ U8 MOVri(GC* gc) {
   return 0;
 }
 
-// D0-D7        mov reg byte[imm16]
+// CF           mov rc
+U8 MOVrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word = gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
+// D0-D7        mov reg byte[imm24]
 U8 MOVrb(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0xD0) % 8].word = gc->mem[Read24(gc, gc->PC+1)];
   gc->PC += 4;
   return 0;
 }
 
-// D8-E0        mov reg word[imm16]
+// D8-E0        mov reg word[imm24]
 U8 MOVrw(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0xD8) % 8].word = ReadWord(gc, Read24(gc, gc->PC+1));
   gc->PC += 4;
   return 0;
 }
 
-// E0-E7        mov byte[imm16] reg
+// E0-E7        mov byte[imm24] reg
 U8 MOVbr(GC* gc) {
   gc->mem[Read24(gc, gc->PC+1)] = gc->reg[(gc->mem[gc->PC]-0xE0) % 8].byte;
   gc->PC += 4;
   return 0;
 }
 
-// E8-EF        mov word[imm16] reg
+// E8-EF        mov word[imm24] reg
 U8 MOVwr(GC* gc) {
   WriteWord(gc, Read24(gc, gc->PC+1), gc->reg[(gc->mem[gc->PC]-0xE8) % 8].word);
   gc->PC += 4;
@@ -210,17 +386,17 @@ U8 PG0F(GC*); // Page 0F - Additional instructions page
 U8 (*INSTS[256])() = {
   &HLT  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &INT  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &ADDrc, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr ,
+  &INXb , &UNK  , &DEXb , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &INXw , &INT  , &DEXw , &UNK  , &UNK  , &UNK  , &UNK  , &ADDrc, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri,
+  &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw,
+  &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr,
+  &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &JEa  , &JNEa , &JCa  , &JNCa , &JSa  , &JNa  , &JIa  , &JNIa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &MOVrc,
   &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw,
   &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK
@@ -275,6 +451,14 @@ U0 StackDump(GC* gc, U16 c) {
   }
 }
 
+U0 MemDump(GC* gc, U32 start, U32 end, U8 newline) {
+  for (U32 i = start; i < end; i++) {
+    printf("%02X ", gc->mem[i]);
+  }
+  putchar(8);
+  putchar(10*newline);
+}
+
 U0 RegDump(GC* gc) {
   printf("pc: %06X;  a: %04X\n", gc->PC, gc->reg[AX]);
   printf("b: %04X;     c: %04X\n", gc->reg[BX], gc->reg[CX]);
@@ -287,9 +471,10 @@ U0 RegDump(GC* gc) {
 U8 Exec(GC* gc, const U32 memsize) {
   U8 exc = 0;
   execloop:
-    getchar();
+    // getchar();
     exc = (INSTS[gc->mem[gc->PC]])(gc);
-    RegDump(gc);
+    // RegDump(gc);
+    MemDump(gc, 0x000000, 0x000010, 1);
     if (exc != 0) return gc_errno;
     goto execloop;
   return exc;

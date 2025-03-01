@@ -32,7 +32,9 @@ DIG    = "0123456789";
 WHI    = " \r\0\t";
 DIGEXT = "0123456789ABCDEF";
 KEY2   = [
-  "mov", "nop", "int", "hlt", "add"
+  "mov", "nop", "int", "hlt", "add", "jmp", "inx", "dex",
+  "je", "jne", "jc", "jnc", "js", "jn", "ji", "jni", "cmp",
+  "jg", "jl"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -267,10 +269,33 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "MOVrw", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRW)) else
    (ASTINS, "MOVbr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRB) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "MOVwr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRW) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "MOVrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "INT8",  toks[pos+1][1], pos + 2, pc + 2)                   if ((b == "int") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "HLT",   0, pos + 1, pc + 1)                                if (b == "hlt") else
    (ASTINS, "ADDri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 3) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "ADDrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "ADDrb", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRB)) else
+   (ASTINS, "ADDrw", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRW)) else
+   (ASTINS, "ADDbr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_ADDRB) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "ADDwr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_ADDRW) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "JMPa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jmp") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JEa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "je") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JNEa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jne") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JCa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "jc") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JNCa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jnc") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JSa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "js") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JSa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "jg") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JNa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "jn") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JNa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "jl") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JI", toks[pos+1][1], pos + 2, pc + 4)                      if ((b == "ji") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JNIa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jni") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "INXr",  toks[pos+1][1], pos + 2, pc + 1)                   if ((b == "inx") and (toks[pos+1][0] == T_REG)) else
+   (ASTINS, "DEXr",  toks[pos+1][1], pos + 2, pc + 1)                   if ((b == "dex") and (toks[pos+1][0] == T_REG)) else
+   (ASTINS, "INXb",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "inx") and (toks[pos+1][0] == T_ADDRB)) else
+   (ASTINS, "INXw",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "inx") and (toks[pos+1][0] == T_ADDRW)) else
+   (ASTINS, "DEXb",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "dex") and (toks[pos+1][0] == T_ADDRB)) else
+   (ASTINS, "DEXw",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "dex") and (toks[pos+1][0] == T_ADDRW)) else
+   (ASTINS, "CMPri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 3) if ((b == "cmp") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (print("kasm: unknown instruction %s" % b) and exit(1))
   );
 
@@ -297,22 +322,43 @@ def Parse(toks: list, filename: str, expm: int) -> list:
     print(f"\033[92m{filename}: exporting {pc} bytes\033[0m");
   else:
     print(f"{filename}: program size: {pc} bytes");
-  return ast, toks;
+  return ast, labels;
 
 # Little endian
 AsWord = lambda a: ((a & 0xFF), (a >> 8));
 As24   = lambda a: ((a & 0xFF), ((a >> 8) & 0xFF), (a >> 16));
 
-CompileInst = lambda prog, b, pos: \
+CompileInst = lambda prog, b, labels, pos: \
   (((0xC0+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "MOVri") else
    ((0xD0+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "MOVrb") else
    ((0xD8+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "MOVrw") else
    ((0xE0+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "MOVbr") else
    ((0xE8+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "MOVwr") else
+   ((0xCF, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "MOVrc") else
    ((0x41, b[2]), pos+1)                     if (b[1] == "INT8") else
    ((0x00,), pos+1)                          if (b[1] == "HLT") else
    ((0x48+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "ADDri") else
    ((0x47, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "ADDrc") else
+   ((0x50+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "ADDrb") else
+   ((0x58+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "ADDrw") else
+   ((0x60+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "ADDbr") else
+   ((0x68+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "ADDwr") else
+   ((0x86, *As24(labels[b[2]])), pos+1)      if (b[1] == "JMPa") else
+   ((0xA0, *As24(labels[b[2]])), pos+1)      if (b[1] == "JEa") else
+   ((0xA1, *As24(labels[b[2]])), pos+1)      if (b[1] == "JNEa") else
+   ((0xA2, *As24(labels[b[2]])), pos+1)      if (b[1] == "JCa") else
+   ((0xA3, *As24(labels[b[2]])), pos+1)      if (b[1] == "JNCa") else
+   ((0xA4, *As24(labels[b[2]])), pos+1)      if (b[1] == "JSa") else
+   ((0xA5, *As24(labels[b[2]])), pos+1)      if (b[1] == "JNa") else
+   ((0xA6, *As24(labels[b[2]])), pos+1)      if (b[1] == "JIa") else
+   ((0xA7, *As24(labels[b[2]])), pos+1)      if (b[1] == "JNIa") else
+   ((0x20+b[2],), pos+1)                     if (b[1] == "INXr") else
+   ((0x28+b[2],), pos+1)                     if (b[1] == "DEXr") else
+   ((0x30, *As24(b[2])), pos+1)              if (b[1] == "INXb") else
+   ((0x40, *As24(b[2])), pos+1)              if (b[1] == "INXw") else
+   ((0x32, *As24(b[2])), pos+1)              if (b[1] == "DEXb") else
+   ((0x42, *As24(b[2])), pos+1)              if (b[1] == "DEXw") else
+   ((0x70+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "CMPri") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 
@@ -322,7 +368,7 @@ def CompileGC24(prog: list, labs: dict):
   pos = 0;
   while (prog[pos][0] != ASTEOF):
     if (prog[pos][0] == ASTINS):
-      compbytes, pos = CompileInst(prog, prog[pos], pos);
+      compbytes, pos = CompileInst(prog, prog[pos], labs, pos);
       if (pos == 0x1_00_0000): exit(1);
       code.extend(compbytes);
     else:
@@ -341,6 +387,7 @@ def IKasm() -> int:
     print(end="\033[97m");
     tokens, exitcode = Lex(cd, "input");
     ast, labs = Parse(tokens, "input", False);
+    labs = OffsetLabs(labs, 0x030000);
     c, exitcode = CompileGC24(ast, labs);
     print(end="\033[96m");
     for i in c:
@@ -396,8 +443,7 @@ def main(argc: int, argv: list) -> int:
     print("Fatal error. Can't compile");
     exit(tokens);
   ast, labs = Parse(tokens, progname, exportmode);
-  if (diskmode):
-    labs = OffsetLabs(labs, 0x3000);
+  labs = OffsetLabs(labs, 0x030000);
   if (exportmode):
     ExportLabs(progname, labs, outname);
     exit(1);

@@ -1,17 +1,17 @@
    00    01    02    03    04    05    06    07    08    09    0A    0B    0C    0D    0E    0F
-00
+00 HLT
 10
 20
-30
-40       INT                                 ADDrc ADDri ADDri ADDri ADDri ADDri ADDri ADDri ADDri
+30 INXb        DEXb
+40 INXw  INT   DEXw                          ADDrc ADDri ADDri ADDri ADDri ADDri ADDri ADDri ADDri
 50 ADDrb ADDrb ADDrb ADDrb ADDrb ADDrb ADDrb ADDrb ADDrw ADDrw ADDrw ADDrw ADDrw ADDrw ADDrw ADDrw
-60                         ADDbi                                           ADDwi
-70
-80 MOVbi MOVwi
+60 ADDbi ADDbi ADDbi ADDbi ADDbi ADDbi ADDbi ADDbi ADDwi ADDwi ADDwi ADDwi ADDwi ADDwi ADDwi ADDwi
+70 CMPri CMPri CMPri CMPri CMPri CMPri CMPri CMPri
+80 MOVbi MOVwi CMPrc
 90
-A0
+A0 JEb   JNEb  JCb   JNCb  JSb   JNb   JIb   JNIb  REb   RNEb  RCb   RNCb  RSb   RNb   RIb   RNIb
 B0 PUSHi PUSHt PUSHb PUSHw PUSHu PUSHr
-C0 MOVri MOVri MOVri MOVri MOVri MOVri MOVri MOVri
+C0 MOVri MOVri MOVri MOVri MOVri MOVri MOVri MOVri                                           MOVrc
 D0 MOVrb MOVrb MOVrb MOVrb MOVrb MOVrb MOVrb MOVrb MOVrw MOVrw MOVrw MOVrw MOVrw MOVrw MOVrw MOVrw
 E0 MOVbr MOVbr MOVbr MOVbr MOVbr MOVbr MOVbr MOVbr MOVwr MOVwr MOVwr MOVwr MOVwr MOVwr MOVwr MOVwr
 F0
@@ -19,13 +19,13 @@ F0
 01[000]001 -- INT -- 41
   01 000 001 - 41 - INT imm8
 
-01100 -- ADD -- 44 ~ 6C
+01100 -- ADD -- 47 ~ 6C
   01 000 100 - 44    - ADD rc
   01 001 RRR - 48-4F - ADD reg imm16
   01 010 RRR - 50-57 - ADD reg byte[imm24]
   01 011 RRR - 58-5F - ADD reg word[imm24]
-  01 100 100 - 64    - ADD byte[imm24] imm16
-  01 101 100 - 6C    - ADD word[imm24] imm16
+  01 100 100 - 60-67 - ADD byte[imm24] imm16
+  01 101 100 - 68-6F - ADD word[imm24] imm16
 
 10[000] -- MOV(2) -- 80 ~ 81
   10 000 000 - 80 - MOV byte[imm24] imm8
