@@ -42,10 +42,6 @@ U0 PageDump(GC* gc, U8 page);
 U0 StackDump(GC* gc, U16 c);
 U0 RegDump(GC* gc);
 
-U32 FullSP(GC* gc) {
-  return (gc->SPAGE << 16) + gc->reg[SP].word;
-}
-
 gcword ReadWord(GC* gc, U32 addr) {
   return (gc->mem[addr]) + (gc->mem[addr+1] << 8);
 }
@@ -62,16 +58,16 @@ U0 WriteWord(GC* gc, U32 addr, U16 val) {
 }
 
 gcbyte StackPush(GC* gc, U32 val) {
-  gc->mem[FullSP(gc)] = (val >> 16);
-  gc->mem[FullSP(gc)-1] = ((val >> 8) % 256);
-  gc->mem[FullSP(gc)-2] = (val % 256);
+  gc->mem[gc->reg[SP].word] = (val >> 16);
+  gc->mem[gc->reg[SP].word-1] = ((val >> 8) % 256);
+  gc->mem[gc->reg[SP].word-2] = (val % 256);
   gc->reg[SP].word -= 3;
   return 0;
 }
 
 gcword StackPop(GC* gc) {
   gc->reg[SP].word += 3;
-  return Read24(gc, FullSP(gc)-2);
+  return Read24(gc, gc->reg[SP].word-2);
 }
 
 gcrc_t ReadRegClust(U8 clust) { // Read a register cluster
@@ -91,6 +87,14 @@ U8 UNK(GC* gc) {    // Unknown instruction
 // 00           hlt
 U8 HLT(GC* gc) {
   return 1;
+}
+
+// 01           trap
+U8 TRAP(GC* gc) {
+  old_st_legacy;
+  ExecD(gc, 1);
+  gc->PC++;
+  return 0;
 }
 
 // 20-27        inx reg
@@ -190,8 +194,8 @@ U8 ADDrc(GC* gc) {
 
 // 48-4F        add reg imm16
 U8 ADDri(GC* gc) {
-  gc->reg[(gc->mem[gc->PC]-0x48) % 8].word += ReadWord(gc, gc->PC+1);
-  gc->PC += 3;
+  gc->reg[(gc->mem[gc->PC]-0x48) % 8].word += Read24(gc, gc->PC+1);
+  gc->PC += 4;
   return 0;
 }
 
@@ -225,17 +229,44 @@ U8 ADDwr(GC* gc) {
   return 0;
 }
 
-// 70-7F        cmp reg imm16
+// 70-77        cmp reg imm16
 U8 CMPri(GC* gc) {
   I16 val0 = gc->reg[(gc->mem[gc->PC]-0x70) % 8].word;
-  I16 val1 = ReadWord(gc, gc->PC+1);
+  I16 val1 = Read24(gc, gc->PC+1);
 
   if (!(val0 - val1))    SET_ZF(gc->PS);
   else                   RESET_ZF(gc->PS);
   if ((val0 - val1) < 0) SET_NF(gc->PS);
   else                   RESET_NF(gc->PS);
 
-  gc->PC += 3;
+  gc->PC += 4;
+  return 0;
+}
+
+// 7F           lodb rc
+U8 LODBc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.y].word = gc->mem[gc->reg[rc.x].word];
+  gc->reg[rc.x].word++;
+  gc->PC += 2;
+  return 0;
+}
+
+// 8F           lodw rc
+U8 LODWc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.y].word = ReadWord(gc, gc->reg[rc.x].word);
+  gc->reg[rc.x].word += 2;
+  gc->PC += 2;
+  return 0;
+}
+
+// 9F           lodh rc
+U8 LODHc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.y].word = Read24(gc, gc->reg[rc.x].word);
+  gc->reg[rc.x].word += 3;
+  gc->PC += 2;
   return 0;
 }
 
@@ -337,8 +368,8 @@ U8 PUSHr(GC* gc) {
 
 // C0-C7        mov reg imm16
 U8 MOVri(GC* gc) {
-  gc->reg[(gc->mem[gc->PC]-0xC0) % 8].word = ReadWord(gc, gc->PC+1);
-  gc->PC += 3;
+  gc->reg[(gc->mem[gc->PC]-0xC0) % 8].word = Read24(gc, gc->PC+1);
+  gc->PC += 4;
   return 0;
 }
 
@@ -384,16 +415,16 @@ U8 PG0F(GC*); // Page 0F - Additional instructions page
 
 // Zero page instructions
 U8 (*INSTS[256])() = {
-  &HLT  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &HLT  , &TRAP , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr ,
   &INXb , &UNK  , &DEXb , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &INXw , &INT  , &DEXw , &UNK  , &UNK  , &UNK  , &UNK  , &ADDrc, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri,
   &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw,
   &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr,
-  &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &LODBc,
+  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &LODWc,
+  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &LODHc,
   &JEa  , &JNEa , &JCa  , &JNCa , &JSa  , &JNa  , &JIa  , &JNIa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &MOVrc,
@@ -427,8 +458,8 @@ U8 PG0F(GC* gc) {   // 0FH
 }
 
 U0 Reset(GC* gc) {
-  gc->reg[SP].word = 0x00FFFF;
-  gc->reg[BP].word = 0x00FFFF;
+  gc->reg[SP].word = 0xFEFFFF;
+  gc->reg[BP].word = 0xFEFFFF;
   gc->PC = 0x030000;
 
   // Reset the general purpose registers
@@ -446,8 +477,8 @@ U0 PageDump(GC* gc, U8 page) {
 }
 
 U0 StackDump(GC* gc, U16 c) {
-  for (U32 i = (gc->SPAGE*65536)+0xFFFF; i > (gc->SPAGE*65536)+0xFFFF-c; i--) {
-    printf("%04X: %02X\n", i, gc->mem[i]);
+  for (U32 i = 0xFFFFFF; i > 0xFFFF-c; i--) {
+    printf("%06X: %02X\n", i, gc->mem[i]);
   }
 }
 
@@ -460,11 +491,11 @@ U0 MemDump(GC* gc, U32 start, U32 end, U8 newline) {
 }
 
 U0 RegDump(GC* gc) {
-  printf("pc: %06X;  a: %04X\n", gc->PC, gc->reg[AX]);
-  printf("b: %04X;     c: %04X\n", gc->reg[BX], gc->reg[CX]);
-  printf("d: %04X;     s: %04X\n", gc->reg[DX], gc->reg[SI]);
-  printf("g: %04X;     spage:sp: %02X%04X\n", gc->reg[GI], gc->SPAGE, gc->reg[SP]);
-  printf("ps %08b; spage:bp: %02X%04X\n", gc->PS, gc->SPAGE, gc->reg[BP]);
+  printf("pc: %06X;  a: %06X\n", gc->PC, gc->reg[AX]);
+  printf("b: %06X;     c: %06X\n", gc->reg[BX], gc->reg[CX]);
+  printf("d: %06X;     s: %06X\n", gc->reg[DX], gc->reg[SI]);
+  printf("g: %06X;     sp: %06X\n", gc->reg[GI], gc->reg[SP]);
+  printf("ps: %08b; bp: %06X\n", gc->PS, gc->reg[BP]);
   printf("   -I---ZNC\033[0m\n");
 }
 

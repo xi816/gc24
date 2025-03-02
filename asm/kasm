@@ -34,7 +34,7 @@ DIGEXT = "0123456789ABCDEF";
 KEY2   = [
   "mov", "nop", "int", "hlt", "add", "jmp", "inx", "dex",
   "je", "jne", "jc", "jnc", "js", "jn", "ji", "jni", "cmp",
-  "jg", "jl"
+  "jg", "jl", "lodb", "lodw", "lodh", "trap"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -264,7 +264,7 @@ def RemEmpty(prog: str):
   return "\n".join([i for i in prog.split("\n") if i]);
 
 ParseInst = lambda toks, b, pos, pc: \
-  ((ASTINS, "MOVri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 3) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+  ((ASTINS, "MOVri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "MOVrb", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRB)) else
    (ASTINS, "MOVrw", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRW)) else
    (ASTINS, "MOVbr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRB) and (toks[pos+2][0] == T_REG)) else
@@ -272,7 +272,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "MOVrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "INT8",  toks[pos+1][1], pos + 2, pc + 2)                   if ((b == "int") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "HLT",   0, pos + 1, pc + 1)                                if (b == "hlt") else
-   (ASTINS, "ADDri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 3) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "ADDri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "ADDrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "ADDrb", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRB)) else
    (ASTINS, "ADDrw", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRW)) else
@@ -295,7 +295,11 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "INXw",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "inx") and (toks[pos+1][0] == T_ADDRW)) else
    (ASTINS, "DEXb",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "dex") and (toks[pos+1][0] == T_ADDRB)) else
    (ASTINS, "DEXw",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "dex") and (toks[pos+1][0] == T_ADDRW)) else
-   (ASTINS, "CMPri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 3) if ((b == "cmp") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "CMPri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "cmp") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "LODBc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodb") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "LODWc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodw") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "LODHc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodh") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "TRAP", None, pos + 1, pc + 1) if (b == "trap") else
    (print("kasm: unknown instruction %s" % b) and exit(1))
   );
 
@@ -329,7 +333,7 @@ AsWord = lambda a: ((a & 0xFF), (a >> 8));
 As24   = lambda a: ((a & 0xFF), ((a >> 8) & 0xFF), (a >> 16));
 
 CompileInst = lambda prog, b, labels, pos: \
-  (((0xC0+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "MOVri") else
+  (((0xC0+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "MOVri") else
    ((0xD0+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "MOVrb") else
    ((0xD8+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "MOVrw") else
    ((0xE0+b[2][1], *As24(b[2][0])), pos+1)   if (b[1] == "MOVbr") else
@@ -337,7 +341,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xCF, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "MOVrc") else
    ((0x41, b[2]), pos+1)                     if (b[1] == "INT8") else
    ((0x00,), pos+1)                          if (b[1] == "HLT") else
-   ((0x48+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "ADDri") else
+   ((0x48+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "ADDri") else
    ((0x47, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "ADDrc") else
    ((0x50+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "ADDrb") else
    ((0x58+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "ADDrw") else
@@ -358,7 +362,11 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0x40, *As24(b[2])), pos+1)              if (b[1] == "INXw") else
    ((0x32, *As24(b[2])), pos+1)              if (b[1] == "DEXb") else
    ((0x42, *As24(b[2])), pos+1)              if (b[1] == "DEXw") else
-   ((0x70+b[2][0], *AsWord(b[2][1])), pos+1) if (b[1] == "CMPri") else
+   ((0x70+b[2][0], *As24(b[2][1])), pos+1)   if (b[1] == "CMPri") else
+   ((0x7F, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "LODBc") else
+   ((0x8F, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "LODWc") else
+   ((0x9F, (b[2][0]<<3)+b[2][1]), pos+1)     if (b[1] == "LODHc") else
+   ((0x01,), pos+1)                          if (b[1] == "TRAP") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 

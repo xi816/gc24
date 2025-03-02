@@ -1,9 +1,12 @@
 main:
-  mov %ax $6000
+  mov %ax $4149
   mov @000000 %ax
+  mov %si $000000
+  mov %ax $0000
 .loop:
-  dex @000000
-  mov %ax @000000
-  cmp %ax $50
-  jg .loop
+  lodh %si %ax
+  trap
+  inx %ax
+  cmp %ax $05
+  jl .loop
   hlt

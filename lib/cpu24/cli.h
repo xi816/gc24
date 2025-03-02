@@ -1,22 +1,21 @@
 // The CLI for using the emulator
 #include <cpu24/gpuh.h>
 #include <cpu24/cpu24h.h>
-#define GC16X_VERSION "1.0"
+#define GC24_VERSION "0.0.1"
 #define EXEC_START 1
 
 typedef struct GC24 GC;
 char* regf[16] = {
-  "AX", "BX", "CX", "DX", "SI", "GI", "SP", "BP",
-  "EX", "FX", "HX", "LX", "X ", "Y ", "IX", "IY",
+  "AX", "BX", "CX", "DX", "SI", "GI", "SP", "BP"
 };
 
 U8 cli_DisplayReg(GC* gc) {
-  for (U8 i = 0; i < 16; i++) {
+  for (U8 i = 0; i < 8; i++) {
     if ((i != 0) && !(i%4)) putchar(10);
-    printf("%s:\033[93m$%04X\033[0m  ", regf[i], gc->reg[i]);
+    printf("%s:\033[93m$%06X\033[0m  ", regf[i], gc->reg[i]);
   }
-  printf("\nPS:\033[93m%08b\033[0m  ", gc->PS);
-  printf("PC:\033[93m$%04X\033[0m  ", gc->PC);
+  printf("\nPS:\033[93m%08b\033[0m ", gc->PS);
+  printf("PC:\033[93m$%06X\033[0m  ", gc->PC);
   printf("\n   -I---ZNC\n");
 }
 
@@ -39,7 +38,7 @@ U8 cli_DisplayMem(GC* gc, U8 page) {
   fputs("\033[A", stdout);
   for (U32 i = page*256; i < page*256+256; i++) {
     if (!(i % 16)) {
-      printf("\n%04X  ", i);
+      printf("\n%06X  ", i);
     }
     printf("%02X ", gc->mem[i]);
   }
@@ -51,7 +50,7 @@ U8 cli_DisplayMemX(GC* gc, U8 page) {
   fputs("\033[A", stdout);
   for (U32 i = page*256; i < page*256+256; i++) {
     if (!(i % 16)) {
-      printf("\n%04X  ", i);
+      printf("\n%06X  ", i);
     }
     putmc(gc->mem[i]);
   }
@@ -71,8 +70,8 @@ U8 ExecD(GC* gc, U8 trapped) {
   uint8_t j = 0;
   char* buf = (char*)malloc(bufsize);
 
-  if (trapped) printf("\n\033[91mtrapped\033[0m at PC$%04X\n", gc->PC);
-  else printf("gc16x emu %s\n", GC16X_VERSION);
+  if (trapped) printf("\n\033[91mtrapped\033[0m at PC$%06X\n", gc->PC);
+  else printf("gc16x emu %s\n", GC24_VERSION);
 
   execloop:
   fputs(": ", stdout);
