@@ -1,187 +1,95 @@
 // Govno Core 16X disassembler
 
+// Config
+#define INSTC "\033[33m"
+#define IMMC  "\033[35m"
+#define REGC  "\033[34m"
+#define ADDRC "\033[32m"
+
 U8* regname[16] = {
-  "%ax", "%bx", "%cx", "%dx", "%si", "%gi", "%sp", "%bp",
-  "%ex", "%fx", "%hx", "%lx", "%x" , "%y" , "%ix", "%iy"
-};
-U8* regshort[16] = {
-  "a", "b", "c", "d", "s", "g", "sp", "bp",
-  "e", "f", "h", "l", "x", "y", "ix", "iy"
+  "%ax", "%bx", "%cx", "%dx", "%si", "%gi", "%sp", "%bp"
 };
 
-U16 bc(U8 low, U8 high) {
-  return (U16)((high << 8) + low);
+U8* jumps[16] = {
+  "e", "ne", "c", "nc", "s", "n", "i", "ni"
+};
+
+U16 r16(U8* bin, U32 pc) {
+  return (U16)((bin[pc] << 8) + (bin[pc+1]));
 }
 
-U8* disasm_inst(U8* bin, U16* pc, FILE* out) {
-  printf("$%04X  ", *pc);
+U32 r24(U8* bin, U32 pc) {
+  return (U32)((bin[pc+2] << 16) + (bin[pc+1] << 8) + (bin[pc]));
+}
+
+U8 disasm_inst(U8* bin, U32* pc, FILE* out) {
+  printf("\033[0m  $%06X:\t", *pc);
   switch (bin[*pc]) {
-  case 0x0F:
-    (*pc)++;
-    switch (bin[*pc]) {
-      case 0x29:
-        printf("jme $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x2A:
-        printf("jmne $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x30:
-        printf("jmp $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x80:
-        printf("pop %s\n", regname[bin[*pc+1]]);
-        *pc += 2;
-        break;
-      case 0x82:
-        printf("push *%s\n", regname[bin[*pc+1]]);
-        *pc += 2;
-        break;
-      case 0x84:
-        printf("push $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x90:
-        printf("push %s\n", regname[bin[*pc+1]]);
-        *pc += 2;
-        break;
-      case 0xBB:
-        printf("jl $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0xCB:
-        printf("jg $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0xC2:
-        printf("int $%02X\n", bin[*pc+1]);
-        *pc += 2;
-        break;
-      case 0xE9:
-        printf("cpuid\n");
-        *pc += 1;
-        break;
-      default:
-        printf("fp ...\n");
-        return NULL;
-    }
+  case 0x00:
+    printf(INSTC "hlt\n");
+    *pc += 1;
+    fputs("\033[0m", stdout);
+    return 2;
     break;
-  case 0x10:
-    (*pc)++;
-    switch (bin[*pc]) {
-      case 0x00:
-        printf("add %s %s\n", regname[bin[*pc+1]/16], regname[bin[*pc+1]%16]);
-        *pc += 2;
-        break;
-      case 0x01:
-        printf("sub %s %s\n", regname[bin[*pc+1]/16], regname[bin[*pc+1]%16]);
-        *pc += 2;
-        break;
-      case 0x02:
-        printf("mul %s %s\n", regname[bin[*pc+1]/16], regname[bin[*pc+1]%16]);
-        *pc += 2;
-        break;
-      case 0x03:
-        printf("div %s %s\n", regname[bin[*pc+1]/16], regname[bin[*pc+1]%16]);
-        *pc += 2;
-        break;
-      case 0x08 ... 0x0F:
-        printf("add %s $%04X\n", regname[bin[*pc]-0x08], bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x18 ... 0x1F:
-        printf("sub %s $%04X\n", regname[bin[*pc]-0x18], bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x28 ... 0x2F:
-        printf("mul %s $%04X\n", regname[bin[*pc]-0x28], bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x38 ... 0x3F:
-        printf("div %s $%04X\n", regname[bin[*pc]-0x38], bc(bin[*pc+1], bin[*pc+2]));
-        *pc += 3;
-        break;
-      case 0x80:
-        printf("storb %s\n", regname[bin[*pc+1]]);
-        *pc += 2;
-        break;
-      case 0x81:
-        printf("stgrb %s\n", regname[bin[*pc+1]]);
-        *pc += 2;
-        break;
-      case 0x8B:
-        printf("ldds\n");
-        *pc += 1;
-        break;
-      case 0xC0 ... 0xCF:
-        printf("inx %s\n", regname[bin[*pc]-0xC0]);
-        *pc += 1;
-        break;
-      case 0xD0 ... 0xDF:
-        printf("dex %s\n", regname[bin[*pc]-0xD0]);
-        *pc += 1;
-        break;
-      case 0xEE:
-        printf("cmp %s $%04X\n", regname[bin[*pc+1]], bc(bin[*pc+2], bin[*pc+3]));
-        *pc += 4;
-        break;
-      case 0xF6:
-        printf("cmp %s %s\n", regname[bin[*pc+1]/16], regname[bin[*pc+1]%16]);
-        *pc += 2;
-        break;
-      default:
-        printf("tp ...\n");
-        return NULL;
-    }
-    break;
-  case 0x11 ... 0x20:
-    printf("ld%s *%s\n", regshort[bin[*pc]-0x11], regname[bin[*pc+1]]);
-    *pc += 2;
-    break;
-  case 0x2B:
-    printf("re\n");
+  case 0x01:
+    printf(INSTC "trap\n");
     *pc += 1;
     break;
-  case 0x33:
-    printf("ret\n");
+  case 0x20 ... 0x27:
+    printf(INSTC "inx\t" REGC "%s\n", regname[bin[*pc]-0x20]);
     *pc += 1;
     break;
-  case 0x40 ... 0x4F:
-    printf("ld%s $%04X\n", regshort[bin[*pc]-0x40], bc(bin[*pc+1], bin[*pc+2]));
-    *pc += 3;
+  case 0x28 ... 0x2F:
+    printf(INSTC "dex\t" REGC "%s\n", regname[bin[*pc]-0x28]);
+    *pc += 1;
     break;
-  case 0x69:
-    printf("cmp *%s $%04X\n", regname[bin[*pc+1]], bc(bin[*pc+2], bin[*pc+3]));
+  case 0x40:
+    printf(INSTC "inx\t" ADDRC "#%06X\n", r24(bin, (*pc)+1));
     *pc += 4;
     break;
-  case 0x77 ... 0x7E:
-    printf("ld%s %s\n", regshort[bin[*pc]-0x77], regname[bin[*pc+1]]);
+  case 0x41:
+    printf(INSTC "int\t" IMMC "$%02X\n", bin[(*pc)+1]);
     *pc += 2;
     break;
-  case 0xB8:
-    printf("loop $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-    *pc += 3;
+  case 0x70 ... 0x77:
+    printf(INSTC "cmp\t" REGC "%s " IMMC "$%06X\n", regname[bin[*pc]-0x70], r24(bin, (*pc)+1));
+    *pc += 4;
     break;
-  case 0xC7:
-    printf("call $%04X\n", bc(bin[*pc+1], bin[*pc+2]));
-    *pc += 3;
+  case 0xA0 ... 0xA7:
+    printf(INSTC "j%s\t" ADDRC "@%06X\n", jumps[bin[*pc]-0xA0], r24(bin, (*pc)+1));
+    *pc += 4;
+    break;
+  case 0xC0 ... 0xC7:
+    printf(INSTC "mov\t" REGC "%s " IMMC "$%06X\n", regname[bin[*pc]-0xC0], r24(bin, (*pc)+1));
+    *pc += 4;
+    break;
+  case 0xE0 ... 0xE7:
+    printf(INSTC "mov\t" ADDRC "#%06X " REGC "%s\n", r24(bin, (*pc)+1), regname[bin[*pc]-0xE8]);
+    *pc += 4;
+    break;
+  case 0xE8 ... 0xEF:
+    printf(INSTC "mov\t" ADDRC "@%06X " REGC "%s\n", r24(bin, (*pc)+1), regname[bin[*pc]-0xE8]);
+    *pc += 4;
+    break;
+  case 0x9F:
+    printf(INSTC "lodh\t" REGC "%s " REGC "%s\n", regname[bin[(*pc)+1] / 8], regname[bin[(*pc)+1] % 8]);
+    *pc += 2;
     break;
   default:
     printf("...\n");
     *pc += 1;
-    // return NULL;
   }
-  return "no shit\n";
+  fputs("\033[0m", stdout);
+  return 0;
 }
 
 U8 disasm(U8* bin, U32 size, FILE* out) {
-  U16 pc = 0;
+  U32 pc = 0x030000;
+  U8 excode;
+  puts("Disassembly of #300000:");
   while (pc < size) {
-    if ((disasm_inst(bin, &pc, out) == NULL) || (pc > 0xFFF0)) {
-      return 1;
-    }
+    excode = disasm_inst(bin, &pc, out);
+    if (excode != 0) return (excode == 1) ? 1 : 0;
   }
   return 0;
 }

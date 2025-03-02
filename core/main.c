@@ -98,10 +98,10 @@ U8 main(I32 argc, I8** argv) {
     fread(gc.mem+0x030000, 1, 65536, fl);
     fclose(fl);
     if (disasmmode) {
-      if (disasm(gc.mem, 65536, stdout) == 1) {
-        old_st;
-        return 1;
-      }
+      if (disasm(gc.mem, MEMSIZE, stdout) == 1)
+        puts("unexpected instruction");
+      old_st;
+      return 1;
     }
     // Disk signaures for GovnFS (without them, fs drivers would not work)
     gc.rom[0x00] = 0x60;
