@@ -29,12 +29,14 @@ U8 usage() {
 }
 
 /* loadBootSector -- Load bootable code from the drive
-   starting at $0091EE
+   starting at $C00000
 */
 U8 loadBootSector(U8* drive, U8* mem) {
+  U8* odrive = drive;
   while (1) {
-    if ((*(drive+0x91EE) == 0xAA) && (*(drive+0x91EF) == 0x55)) break;
-    *(mem++) = *(drive+0x91EE);
+    printf("gc24: loadBootSector pass at %06X\n", drive-odrive);
+    if ((*(drive+0xC00000) == 0xAA) && (*(drive+0xC00001) == 0x55)) break;
+    *(mem++) = *(drive+0xC00000);
     drive++;
   }
   return 0;
@@ -116,9 +118,10 @@ U8 main(I32 argc, I8** argv) {
       old_st;
       return 1;
     }
-    fread(gc.rom, 1, 65536, fl);
+    fread(gc.rom, 1, ROMSIZE, fl);
     fclose(fl);
     // Load the boot sector from $91EE into memory
+    puts("gc24: Booting from a drive");
     loadBootSector(gc.rom, gc.mem);
     // Setup the pin bit 7 to 1 (drive)
     gc.pin |= 0b10000000;

@@ -3,3 +3,9 @@ Memory:
   $400000-$404B00      VGA
   $FE0000-$FEFFFF      Stack
   $FF0000-$FFFFFF      Interrupt tables
+
+ROM:
+  $000000-$000020      GovnFS signature
+  $000020-$0001FF      Reserved space
+  $000200-$C00000      File storage
+  $C00000-$D0FFFF      Boot sector
