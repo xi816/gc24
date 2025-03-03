@@ -14,8 +14,15 @@ uint8_t readHeader(uint8_t* disk) {
 }
 
 // The header is the first 32 bytes of the disk
-uint8_t readFilenames(uint8_t* disk, char c, char* tag) {
-  puts("Listing %c/");
+uint8_t readFilenames(uint8_t* disk, char c) {
+  printf("Listing %c/\n", c);
+  uint16_t sector = 0x0001; // Sector 0 is header data
+  while (disk[sector*512] != 0xF7) {
+    if (disk[sector*512] == 0x01) {
+      printf("  %.11s\t%.3s\n", &(disk[sector*512+1]), &(disk[sector*512+13]));
+    }
+    sector++;
+  }
   return 0;
 }
 
@@ -50,6 +57,9 @@ int main(int argc, char** argv) {
 
   if (!strcmp(argv[1], "-i")) {
     return readHeader(disk);
+  }
+  else if (!strcmp(argv[1], "-l")) {
+    return readFilenames(disk, disk[0x10]);
   }
   else {
     printf("ugovnfs: \033[91mfatal error:\033[0m unknown argument: `%s`\n", argv[1]);
