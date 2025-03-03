@@ -34,11 +34,12 @@ U8 usage() {
 U8 loadBootSector(U8* drive, U8* mem) {
   U8* odrive = drive;
   while (1) {
-    printf("gc24: loadBootSector pass at %06X\n", drive-odrive);
     if ((*(drive+0xC00000) == 0xAA) && (*(drive+0xC00001) == 0x55)) break;
-    *(mem++) = *(drive+0xC00000);
+    *(mem+0x030000) = *(drive+0xC00000);
+    mem++;
     drive++;
   }
+  printf("gc24: read %d bytes from ROM\n", drive-odrive+1);
   return 0;
 }
 
@@ -120,8 +121,7 @@ U8 main(I32 argc, I8** argv) {
     }
     fread(gc.rom, 1, ROMSIZE, fl);
     fclose(fl);
-    // Load the boot sector from $91EE into memory
-    puts("gc24: Booting from a drive");
+    // Load the boot sector from $C00000 into RAM ($030000)
     loadBootSector(gc.rom, gc.mem);
     // Setup the pin bit 7 to 1 (drive)
     gc.pin |= 0b10000000;
@@ -149,8 +149,10 @@ U8 main(I32 argc, I8** argv) {
       old_st;
       return 1;
     }
-    fwrite(gc.rom, 1, 65536, fl);
+    fwrite(gc.rom, 1, ROMSIZE, fl);
     fclose(fl);
   }
+  free(gc.rom);
+  free(gc.mem);
   return exec_errno;
 }

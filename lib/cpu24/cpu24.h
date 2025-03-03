@@ -168,7 +168,7 @@ U8 DEXw(GC* gc) {
 U8 INT(GC* gc) {
   if (!IF(gc->PS)) goto intend;
   if (gc->mem[gc->PC+1] >= 0x80) { // Custom interrupt
-    gc->PC = Read24(gc, ((gc->mem[gc->PC+1]-0x80+1)*3-3)+0xFF0000);
+    gc->PC = Read24(gc, ((gc->mem[gc->PC+1]-0x80)*3)+0xFF0000);
     return 0;
   }
   switch (gc->mem[gc->PC+1]) {

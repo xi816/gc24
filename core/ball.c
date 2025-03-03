@@ -12,9 +12,12 @@ int32_t main(void) {
     color = "\0";
     rcolor = "\0";
   }
-  char* targets[] = {"gc24"};
+  char* targets[] = {"gc24", "gboot", "mkfs.govnfs", "ugovnfs"};
   char* commands[] = {
-    "gcc core/main.c -Ilib/ -lm -lSDL2 -o gc24"
+    "gcc core/main.c -Ilib/ -lm -lSDL2 -o gc24",
+    "gcc core/gboot/main.c -o gboot",
+    "gcc core/mkfs.govnfs/main.c -o mkfs.govnfs",
+    "gcc core/ugovnfs/main.c -o ugovnfs"
   };
 
   printf("rebuilding %sball%s\n", color, rcolor);
