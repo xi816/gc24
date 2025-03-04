@@ -271,8 +271,9 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "MOVbr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRB) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "MOVwr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_ADDRW) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "MOVrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
-  (ASTINS, "MOVra", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ID)) else
+   (ASTINS, "MOVra", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mov") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ID)) else
    (ASTINS, "INT8",  toks[pos+1][1], pos + 2, pc + 2)                   if ((b == "int") and (toks[pos+1][0] == T_INT)) else
+   (ASTINS, "POPr",  toks[pos+1][1], pos + 2, pc + 2)                   if ((b == "pop") and (toks[pos+1][0] == T_REG)) else
    (ASTINS, "HLT",   0, pos + 1, pc + 1)                                if (b == "hlt") else
    (ASTINS, "ADDri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "ADDrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
@@ -373,6 +374,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xCF, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "MOVrc") else
    ((0xC0+b[2][0], *As24(labels[b[2][1]])), pos+1) if (b[1] == "MOVra") else
    ((0x41, b[2]), pos+1)                           if (b[1] == "INT8") else
+   ((0xB6, b[2]), pos+1)                           if (b[1] == "POPr") else
    ((0x00,), pos+1)                                if (b[1] == "HLT") else
    ((0x48+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "ADDri") else
    ((0x47, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "ADDrc") else
@@ -498,8 +500,6 @@ def main(argc: int, argv: list) -> int:
     print("Fatal error. Can't compile");
     exit(tokens);
   ast, labs = Parse(tokens, progname, exportmode);
-  PrintAst(ast);
-  PrintLabs(labs);
   labs = OffsetLabs(labs, 0x030000);
   if (exportmode):
     ExportLabs(progname, labs, outname);
