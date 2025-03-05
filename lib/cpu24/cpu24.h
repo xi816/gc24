@@ -57,6 +57,14 @@ U0 WriteWord(GC* gc, U32 addr, U16 val) {
   gc->mem[addr+1] = (val >> 8);
 }
 
+U0 Write24(GC* gc, U32 addr, U32 val) {
+  // Least significant byte goes first
+  // $694200 -> $00,$42,$69
+  gc->mem[addr] = (val % 256);
+  gc->mem[addr+1] = ((val >> 8) % 256);
+  gc->mem[addr+2] = ((val >> 16) % 256);
+}
+
 gcbyte StackPush(GC* gc, U32 val) {
   gc->mem[gc->reg[SP].word] = (val >> 16);
   gc->mem[gc->reg[SP].word-1] = ((val >> 8) % 256);
@@ -65,7 +73,7 @@ gcbyte StackPush(GC* gc, U32 val) {
   return 0;
 }
 
-gcword StackPop(GC* gc) {
+U32 StackPop(GC* gc) {
   gc->reg[SP].word += 3;
   return Read24(gc, gc->reg[SP].word-2);
 }
@@ -266,8 +274,23 @@ U8 CMPri(GC* gc) {
 
 // 78           call imm24
 U8 CALLa(GC* gc) {
-  StackPush(gc, gc->PC);
+  StackPush(gc, gc->PC+4);
   gc->PC = Read24(gc, gc->PC+1);
+  return 0;
+}
+
+// 79           ret
+U8 RET(GC* gc) {
+  gc->PC = StackPop(gc);
+  return 0;
+}
+
+// 7E           stob rc
+U8 STOBc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->mem[gc->reg[rc.x].word] = gc->reg[rc.y].word;
+  gc->reg[rc.x].word++;
+  gc->PC += 2;
   return 0;
 }
 
@@ -276,6 +299,15 @@ U8 LODBc(GC* gc) {
   gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
   gc->reg[rc.y].word = gc->mem[gc->reg[rc.x].word];
   gc->reg[rc.x].word++;
+  gc->PC += 2;
+  return 0;
+}
+
+// 8E           stow rc
+U8 STOWc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  WriteWord(gc, gc->reg[rc.x].word, gc->reg[rc.y].word);
+  gc->reg[rc.x].word += 2;
   gc->PC += 2;
   return 0;
 }
@@ -289,12 +321,30 @@ U8 LODWc(GC* gc) {
   return 0;
 }
 
+// 9E           stoh rc
+U8 STOHc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  Write24(gc, gc->reg[rc.x].word, gc->reg[rc.y].word);
+  gc->reg[rc.x].word += 3;
+  gc->PC += 2;
+  return 0;
+}
+
 // 9F           lodh rc
 U8 LODHc(GC* gc) {
   gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
   gc->reg[rc.y].word = Read24(gc, gc->reg[rc.x].word);
   gc->reg[rc.x].word += 3;
   gc->PC += 2;
+  return 0;
+}
+
+// 80-83        mov reg imm24
+U8 DIVri(GC* gc) {
+  U32 a = Read24(gc, gc->PC+1);
+  gc->reg[DX].word = (gc->reg[(gc->mem[gc->PC]-0x80) % 4].word % a);
+  gc->reg[(gc->mem[gc->PC]-0x80) % 4].word /= a;
+  gc->PC += 4;
   return 0;
 }
 
@@ -483,6 +533,22 @@ U8 POPr(GC* gc) {
   return 0;
 }
 
+// B8           loop imm24
+U8 LOOPa(GC* gc) {
+  // printf("loop eshkere\n");
+  // printf("CX == $%06X\n", gc->reg[CX]);
+  if (gc->reg[CX].word) {
+    gc->reg[CX].word--;
+    gc->PC = Read24(gc, gc->PC+1);
+  }
+  else {
+    gc->PC += 4;
+  }
+  // printf("teper PC == $%06X\n", gc->PC);
+  // getchar();
+  return 0;
+}
+
 // C0-C7        mov reg imm24
 U8 MOVri(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0xC0) % 8].word = Read24(gc, gc->PC+1);
@@ -494,6 +560,31 @@ U8 MOVri(GC* gc) {
 U8 MOVrc(GC* gc) {
   gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
   gc->reg[rc.x].word = gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
+// C8           sub rc
+U8 SUBrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word -= gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
+// C9           mul rc
+U8 MULrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word *= gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
+// CA           div rc
+U8 DIVrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[DX].word = gc->reg[rc.x].word % gc->reg[rc.y].word; // Remainder into %dx
+  gc->reg[rc.x].word /= gc->reg[rc.y].word;
   gc->PC += 2;
   return 0;
 }
@@ -539,14 +630,14 @@ U8 (*INSTS[256])() = {
   &INXw , &INT  , &DEXw , &UNK  , &UNK  , &UNK  , &UNK  , &ADDrc, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri,
   &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw,
   &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr,
-  &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CALLa, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &LODBc,
-  &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &LODWc,
-  &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &LODHc,
+  &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CALLa, &RET  , &UNK  , &UNK  , &UNK  , &UNK  , &STOBc, &LODBc,
+  &DIVri, &DIVri, &DIVri, &DIVri, &UNK  , &UNK  , &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOWc, &LODWc,
+  &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOHc, &LODHc,
   &JEa  , &JNEa , &JCa  , &JNCa , &JSa  , &JNa  , &JIa  , &JNIa , &RE   , &RNE  , &RC   , &RNC  , &RS   , &RN   , &RI   , &RNI  ,
-  &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &POPr , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
-  &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &MOVrc,
-  &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw,
-  &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr,
+  &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &POPr , &UNK  , &LOOPa, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &SUBrc, &MULrc, &DIVrc, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &MOVrc,
+  &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw,
+  &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr,
   &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK
 };
 
@@ -594,8 +685,9 @@ U0 PageDump(GC* gc, U8 page) {
 }
 
 U0 StackDump(GC* gc, U16 c) {
-  for (U32 i = 0xFFFFFF; i > 0xFFFF-c; i--) {
-    printf("%06X: %02X\n", i, gc->mem[i]);
+  for (U32 i = 0xFEFFFF; i > 0xFEFFFF-c; i--) {
+    if (i != gc->reg[SP].word) printf("%06X: %02X\n", i, gc->mem[i]);
+    else                       printf("\033[92m%06X: %02X\033[0m\n", i, gc->mem[i]);
   }
 }
 
@@ -622,7 +714,8 @@ U8 Exec(GC* gc, const U32 memsize) {
     // getchar();
     exc = (INSTS[gc->mem[gc->PC]])(gc);
     // RegDump(gc);
-    // MemDump(gc, 0x000000, 0x000010, 1);
+    // MemDump(gc, 0x030042, 0x030062, 1);
+    // StackDump(gc, 12);
     if (exc != 0) return gc_errno;
     goto execloop;
   return exc;

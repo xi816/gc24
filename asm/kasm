@@ -26,7 +26,7 @@ ASTEOF   = 0x04;
 HUMAN_TOKS = ["inst", "int", "label", "reg", "*reg", "id", "#addr", "@addr", "*addr", "byte", "string", "mcr", "eol", "eof"];
 HUMAN_AST  = ["INST", "BYTES", "RESERVE", "BRK-HANDLER", "EOF"];
 
-LET    = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+LET    = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
 LETEXT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy0123456789z-_.";
 DIG    = "0123456789";
 WHI    = " \r\0\t";
@@ -35,7 +35,8 @@ KEY2   = [
   "mov", "nop", "int", "hlt", "add", "jmp", "inx", "dex",
   "je", "jne", "jc", "jnc", "js", "jn", "ji", "jni", "cmp",
   "jg", "jl", "lodb", "lodw", "lodh", "trap", "call", "ret",
-  "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push"
+  "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push",
+  "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -281,6 +282,12 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "ADDrw", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_ADDRW)) else
    (ASTINS, "ADDbr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_ADDRB) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "ADDwr", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "add") and (toks[pos+1][0] == T_ADDRW) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "SUBri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "sub") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "SUBrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "sub") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "MULri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "mul") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "MULrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "mul") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "DIVri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "div") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "DIVrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "div") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "JMPa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jmp") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "JEa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "je") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "JNEa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jne") and (toks[pos+1][0] == T_ID)) else
@@ -292,6 +299,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "JNa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "jl") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "JIa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "ji") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "JNIa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jni") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "LOOPa", toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "loop") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "INXr",  toks[pos+1][1], pos + 2, pc + 1)                   if ((b == "inx") and (toks[pos+1][0] == T_REG)) else
    (ASTINS, "DEXr",  toks[pos+1][1], pos + 2, pc + 1)                   if ((b == "dex") and (toks[pos+1][0] == T_REG)) else
    (ASTINS, "INXb",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "inx") and (toks[pos+1][0] == T_ADDRB)) else
@@ -303,7 +311,11 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "LODBc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodb") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "LODWc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodw") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "LODHc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodh") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "STOBc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "stob") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "STOWc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "stow") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "STOHc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "stoh") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "TRAP", None, pos + 1, pc + 1) if (b == "trap") else
+   (ASTINS, "RET", None, pos + 2, pc + 1)                     if (b == "ret") else
    (ASTINS, "RE", None, pos + 2, pc + 1)                      if (b == "re") else
    (ASTINS, "RNE", None, pos + 2, pc + 1)                     if (b == "rne") else
    (ASTINS, "RC", None, pos + 2, pc + 1)                      if (b == "rc") else
@@ -316,7 +328,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "RNI", None, pos + 2, pc + 1)                     if (b == "rni") else
    (ASTINS, "PUSHi", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "push") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "PUSHr", toks[pos+1][1], pos + 2, pc + 2)         if ((b == "push") and (toks[pos+1][0] == T_REG)) else
-   (print("kasm: unknown instruction %s" % b) and exit(1))
+   (print("kasm: unknown instruction", toks[pos]) and exit(1))
   );
 
 # Parser:
@@ -349,6 +361,31 @@ def Parse(toks: list, filename: str, expm: int) -> list:
           exit(1);
         pos += 1;
       pos += 1;
+    elif (toks[pos][0] == T_MCR): # Parse macros
+      if (toks[pos][1] == "reserve"):
+        if (toks[pos+1][0] != T_INT):
+          print(f"\033[31mError\033[0m: expected number after reserve.");
+          print(f"\033[96mHint\033[0m: syntax for `reserve` is: reserve 10 bytes");
+          exit(1);
+        if (toks[pos+2][0] == T_BYTE):
+          restype = 1; # bytes
+        else:
+          print(f"\033[31mError\033[0m: expected bytes after reserve #n.");
+          print(f"\033[96mHint\033[0m: syntax for `reserve` is: reserve 10 bytes");
+          exit(1);
+        ast.append([ASTRES, "__B_reserve", toks[pos+1][1]*restype, pc]);
+        pc += toks[pos+1][1]*restype;
+        pos += 3;
+      elif (toks[pos][1] == "extern"):
+        if (toks[pos+1][0] != T_STR):
+          print(f"\033[31mError\033[0m: expected filename after extern.");
+          print(f"\033[96mHint\033[0m: syntax for `extern` is: extern \"filename\"");
+          exit(1);
+        with open(toks[pos+1][1], "rb") as extern_file:
+          extern_source = extern_file.read()
+        ast.append([ASTRES, "__B_extern", extern_source, pc]);
+        pc += len(extern_source);
+        pos += 2;
     elif (toks[pos][0] == T_EOL):
       pos += 1;
     else:
@@ -391,6 +428,13 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xA5, *As24(labels[b[2]])), pos+1)            if (b[1] == "JNa") else
    ((0xA6, *As24(labels[b[2]])), pos+1)            if (b[1] == "JIa") else
    ((0xA7, *As24(labels[b[2]])), pos+1)            if (b[1] == "JNIa") else
+   ((0xB8, *As24(labels[b[2]])), pos+1)            if (b[1] == "LOOPa") else
+   ((0x10+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "SUBri") else
+   ((0xC8, *As24(b[2][1])), pos+1)                 if (b[1] == "SUBrc") else
+   ((0x08+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "MULri") else
+   ((0xC9, *As24(b[2][1])), pos+1)                 if (b[1] == "MULrc") else
+   ((0x80+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "DIVri") else
+   ((0xCA, *As24(b[2][1])), pos+1)                 if (b[1] == "DIVrc") else
    ((0x20+b[2],), pos+1)                           if (b[1] == "INXr") else
    ((0x28+b[2],), pos+1)                           if (b[1] == "DEXr") else
    ((0x30, *As24(b[2])), pos+1)                    if (b[1] == "INXb") else
@@ -401,7 +445,11 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0x7F, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "LODBc") else
    ((0x8F, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "LODWc") else
    ((0x9F, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "LODHc") else
+   ((0x7E, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "STOBc") else
+   ((0x8E, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "STOWc") else
+   ((0x9E, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "STOHc") else
    ((0x01,), pos+1)                                if (b[1] == "TRAP") else
+   ((0x79,), pos+1)                                if (b[1] == "RET") else
    ((0xA8,), pos+1)                                if (b[1] == "RE") else
    ((0xA9,), pos+1)                                if (b[1] == "RNE") else
    ((0xAA,), pos+1)                                if (b[1] == "RC") else
@@ -427,6 +475,9 @@ def CompileGC24(prog: list, labs: dict):
       code.extend(compbytes);
     elif (prog[pos][0] == ASTBYTES):
       code.extend(prog[pos][2]);
+      pos += 1;
+    elif (prog[pos][0] == ASTRES):
+      code.extend(bytes(prog[pos][2]));
       pos += 1;
     else:
       print("kasm: unknown ast node: %s" % HUMAN_AST[prog[pos][0]]);

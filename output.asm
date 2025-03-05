@@ -1,5 +1,4 @@
-reboot: jmp main
-
+jmp _porth_start
 write:
   dex %cx
 .loop:
@@ -23,12 +22,21 @@ puti:
   mov %si puti_buf
   mov %cx 8
   call write
+  push $0A
+  int 2
   ret
 puti_buf: reserve 8 bytes
-
-main:
-  mov %ax 69
+_porth_start:
+  ; push 34
+  push 34
+  ; push 35
+  push 35
+  ; plus
+  pop %ax
+  pop %bx
+  add %ax %bx
+  push %ax
+  ; dump
+  pop %ax
   call puti
-  push '$'
-  int 2
   hlt
