@@ -213,6 +213,21 @@ U8 INT(GC* gc) {
   return 0;
 }
 
+// 37           cmp rc
+U8 CMPrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  I16 val0 = gc->reg[rc.x].word;
+  I16 val1 = gc->reg[rc.y].word;
+
+  if (!(val0 - val1))    SET_ZF(gc->PS);
+  else                   RESET_ZF(gc->PS);
+  if ((val0 - val1) < 0) SET_NF(gc->PS);
+  else                   RESET_NF(gc->PS);
+
+  gc->PC += 2;
+  return 0;
+}
+
 // 47           add rc
 U8 ADDrc(GC* gc) {
   gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
@@ -654,7 +669,7 @@ U8 (*INSTS[256])() = {
   &HLT  , &TRAP , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri,
   &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb,
   &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr ,
-  &INXb , &UNK  , &DEXb , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &INXb , &UNK  , &DEXb , &UNK  , &UNK  , &UNK  , &UNK  , &CMPrc, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
   &INXw , &INT  , &DEXw , &UNK  , &UNK  , &UNK  , &UNK  , &ADDrc, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri,
   &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw,
   &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr,
