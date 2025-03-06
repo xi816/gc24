@@ -549,6 +549,34 @@ U8 LOOPa(GC* gc) {
   return 0;
 }
 
+// B9           ldds
+U8 LDDS(GC* gc) {
+  gc->reg[AX].word = gc->rom[gc->reg[SI].word];
+  gc->PC++;
+  return 0;
+}
+
+// BA           lddg
+U8 LDDG(GC* gc) {
+  gc->reg[AX].word = gc->rom[gc->reg[SI].word];
+  gc->PC++;
+  return 0;
+}
+
+// BB           stds
+U8 STDS(GC* gc) {
+  gc->rom[gc->reg[SI].word] = gc->reg[gc->mem[gc->PC+1]];
+  gc->PC++;
+  return 0;
+}
+
+// BC           stdg
+U8 STDG(GC* gc) {
+  gc->rom[gc->reg[GI].word] = gc->reg[gc->mem[gc->PC+1]];
+  gc->PC++;
+  return 0;
+}
+
 // C0-C7        mov reg imm24
 U8 MOVri(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0xC0) % 8].word = Read24(gc, gc->PC+1);
@@ -634,7 +662,7 @@ U8 (*INSTS[256])() = {
   &DIVri, &DIVri, &DIVri, &DIVri, &UNK  , &UNK  , &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOWc, &LODWc,
   &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOHc, &LODHc,
   &JEa  , &JNEa , &JCa  , &JNCa , &JSa  , &JNa  , &JIa  , &JNIa , &RE   , &RNE  , &RC   , &RNC  , &RS   , &RN   , &RI   , &RNI  ,
-  &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &POPr , &UNK  , &LOOPa, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
+  &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &POPr , &UNK  , &LOOPa, &LDDS , &LDDG , &STDS , &STDG , &UNK  , &UNK  , &UNK  ,
   &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &SUBrc, &MULrc, &DIVrc, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &MOVrc,
   &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw,
   &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr,

@@ -36,7 +36,8 @@ KEY2   = [
   "je", "jne", "jc", "jnc", "js", "jn", "ji", "jni", "cmp",
   "jg", "jl", "lodb", "lodw", "lodh", "trap", "call", "ret",
   "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push",
-  "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop"
+  "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop",
+  "ldds", "lddg", "stds", "stdg"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -316,18 +317,22 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "STOHc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "stoh") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "TRAP", None, pos + 1, pc + 1) if (b == "trap") else
    (ASTINS, "RET", None, pos + 2, pc + 1)                     if (b == "ret") else
-   (ASTINS, "RE", None, pos + 2, pc + 1)                      if (b == "re") else
-   (ASTINS, "RNE", None, pos + 2, pc + 1)                     if (b == "rne") else
-   (ASTINS, "RC", None, pos + 2, pc + 1)                      if (b == "rc") else
-   (ASTINS, "RNC", None, pos + 2, pc + 1)                     if (b == "rnc") else
-   (ASTINS, "RS", None, pos + 2, pc + 1)                      if (b == "rs") else
-   (ASTINS, "RS", None, pos + 2, pc + 1)                      if (b == "rg") else
-   (ASTINS, "RN", None, pos + 2, pc + 1)                      if (b == "rn") else
-   (ASTINS, "RN", None, pos + 2, pc + 1)                      if (b == "rl") else
-   (ASTINS, "RI", None, pos + 2, pc + 1)                      if (b == "ri") else
-   (ASTINS, "RNI", None, pos + 2, pc + 1)                     if (b == "rni") else
+   (ASTINS, "RE", None, pos + 1, pc + 1)                      if (b == "re") else
+   (ASTINS, "RNE", None, pos + 1, pc + 1)                     if (b == "rne") else
+   (ASTINS, "RC", None, pos + 1, pc + 1)                      if (b == "rc") else
+   (ASTINS, "RNC", None, pos + 1, pc + 1)                     if (b == "rnc") else
+   (ASTINS, "RS", None, pos + 1, pc + 1)                      if (b == "rs") else
+   (ASTINS, "RS", None, pos + 1, pc + 1)                      if (b == "rg") else
+   (ASTINS, "RN", None, pos + 1, pc + 1)                      if (b == "rn") else
+   (ASTINS, "RN", None, pos + 1, pc + 1)                      if (b == "rl") else
+   (ASTINS, "RI", None, pos + 1, pc + 1)                      if (b == "ri") else
+   (ASTINS, "RNI", None, pos + 1, pc + 1)                     if (b == "rni") else
    (ASTINS, "PUSHi", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "push") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "PUSHr", toks[pos+1][1], pos + 2, pc + 2)         if ((b == "push") and (toks[pos+1][0] == T_REG)) else
+   (ASTINS, "LDDS", None, pos + 1, pc + 1)                    if (b == "ldds") else
+   (ASTINS, "LDDG", None, pos + 1, pc + 1)                    if (b == "lddg") else
+   (ASTINS, "STDS", None, pos + 1, pc + 1)                    if (b == "stds") else
+   (ASTINS, "STDG", None, pos + 1, pc + 1)                    if (b == "stdg") else
    (print("kasm: unknown instruction", toks[pos]) and exit(1))
   );
 
@@ -461,6 +466,10 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xB0, *As24(b[2])), pos+1)                    if (b[1] == "PUSHi") else
    ((0xB5, b[2]), pos+1)                           if (b[1] == "PUSHr") else
    ((0x78, *As24(labels[b[2]])), pos+1)            if (b[1] == "CALLa") else
+   ((0xB9,), pos+1)                                if (b[1] == "LDDS") else
+   ((0xBA,), pos+1)                                if (b[1] == "LDDG") else
+   ((0xBB,), pos+1)                                if (b[1] == "STDS") else
+   ((0xBC,), pos+1)                                if (b[1] == "STDG") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 
