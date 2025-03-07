@@ -37,7 +37,7 @@ KEY2   = [
   "jg", "jl", "lodb", "lodw", "lodh", "trap", "call", "ret",
   "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push",
   "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop",
-  "ldds", "lddg", "stds", "stdg"
+  "ldds", "lddg", "stds", "stdg", "sti"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -334,6 +334,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "LDDG", None, pos + 1, pc + 1)                    if (b == "lddg") else
    (ASTINS, "STDS", None, pos + 1, pc + 1)                    if (b == "stds") else
    (ASTINS, "STDG", None, pos + 1, pc + 1)                    if (b == "stdg") else
+   (ASTINS, "STI8", toks[pos+1][1], pos + 2, pc + 2)          if ((b == "sti") and (toks[pos+1][0] == T_INT)) else
    (print("kasm: unknown instruction", toks[pos]) and exit(1))
   );
 
@@ -472,6 +473,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xBA,), pos+1)                                if (b[1] == "LDDG") else
    ((0xBB,), pos+1)                                if (b[1] == "STDS") else
    ((0xBC,), pos+1)                                if (b[1] == "STDG") else
+   ((0x03, b[2]), pos+1)                           if (b[1] == "STI8") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 

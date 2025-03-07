@@ -11,7 +11,6 @@
 
 union gcreg {
   uint32_t word: 24;
-  uint8_t byte;
 };
 typedef union gcreg gcreg;
 
