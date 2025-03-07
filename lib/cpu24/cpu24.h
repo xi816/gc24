@@ -580,14 +580,14 @@ U8 LDDG(GC* gc) {
 
 // BB           stds
 U8 STDS(GC* gc) {
-  gc->rom[gc->reg[SI].word] = gc->reg[gc->mem[gc->PC+1]];
+  gc->rom[gc->reg[SI].word] = gc->reg[gc->mem[gc->PC+1]].word;
   gc->PC++;
   return 0;
 }
 
 // BC           stdg
 U8 STDG(GC* gc) {
-  gc->rom[gc->reg[GI].word] = gc->reg[gc->mem[gc->PC+1]];
+  gc->rom[gc->reg[GI].word] = gc->reg[gc->mem[gc->PC+1]].word;
   gc->PC++;
   return 0;
 }

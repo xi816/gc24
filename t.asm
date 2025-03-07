@@ -1,4 +1,0 @@
-ldds
-lddg
-stds
-stdg
