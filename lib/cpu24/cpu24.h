@@ -112,6 +112,13 @@ U8 STI(GC* gc) {
   return 0;
 }
 
+// 04           iret
+U8 IRET(GC* gc) {
+  gc->PS = StackPop(gc);
+  gc->PC = StackPop(gc);
+  return 0;
+}
+
 // 08-0F        mul reg imm24
 U8 MULri(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0x08) % 8].word *= Read24(gc, gc->PC+1);
@@ -183,6 +190,8 @@ U8 DEXw(GC* gc) {
 U8 INT(GC* gc) {
   if (!IF(gc->PS)) goto intend;
   if (gc->mem[gc->PC+1] >= 0x80) { // Custom interrupt
+    StackPush(gc, gc->PC+2); // Return address
+    StackPush(gc, gc->PS); // Flags
     gc->PC = Read24(gc, ((gc->mem[gc->PC+1]-0x80)*3)+0xFF0000);
     return 0;
   }
