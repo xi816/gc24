@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+echo "Compiling GovnOS..."
+kasm boot.asm boot.bin
+

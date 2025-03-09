@@ -34,7 +34,7 @@ U8 putmc(U8 c) {
   return 0;
 }
 
-U8 cli_DisplayMem(GC* gc, U8 page) {
+U8 cli_DisplayMem(GC* gc, U16 page) {
   fputs("\033[A", stdout);
   for (U32 i = page*256; i < page*256+256; i++) {
     if (!(i % 16)) {
@@ -46,7 +46,7 @@ U8 cli_DisplayMem(GC* gc, U8 page) {
   return 0;
 }
 
-U8 cli_DisplayMemX(GC* gc, U8 page) {
+U8 cli_DisplayMemX(GC* gc, U16 page) {
   fputs("\033[A", stdout);
   for (U32 i = page*256; i < page*256+256; i++) {
     if (!(i % 16)) {

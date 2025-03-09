@@ -11,10 +11,13 @@ T_DREG  = 0x04;
 T_ID    = 0x05;
 T_ADDRB = 0x06;
 T_ADDRW = 0x07;
-T_ADDRT = 0x08;
+T_ADDRH = 0x08;
 T_BYTE  = 0x09;
 T_STR   = 0x0A;
 T_MCR   = 0x0B;
+T_DREB  = 0x0C;
+T_DREW  = 0x0D;
+T_DREH  = 0x0E;
 T_EOL   = 0x0C;
 T_EOF   = 0x0D;
 
@@ -209,10 +212,16 @@ def Lex(prog: str, filename: str):
       buf = "";
     elif (prog[pos] == "@"):
       pos += 1;
-      while (prog[pos] in DIGEXT):
-        buf += prog[pos];
-        pos += 1;
-      toks.append((T_ADDRW, int(buf, base=16)));
+      if (prog[pos] in DIGEXT):
+        while (prog[pos] in DIGEXT):
+          buf += prog[pos];
+          pos += 1;
+        toks.append((T_ADDRW, int(buf, base=16)));
+      else:
+        while (prog[pos] in LET):
+          buf += prog[pos];
+          pos += 1;
+        toks.append((T_DREW, buf));
       buf = "";
     elif (prog[pos] == "*"):
       pos += 1;
@@ -335,6 +344,9 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "STDS", None, pos + 1, pc + 1)                    if (b == "stds") else
    (ASTINS, "STDG", None, pos + 1, pc + 1)                    if (b == "stdg") else
    (ASTINS, "STI8", toks[pos+1][1], pos + 2, pc + 2)          if ((b == "sti") and (toks[pos+1][0] == T_INT)) else
+   (ASTINS, "IRET", None, pos + 2, pc + 1)                    if (b == "iret") else
+   (ASTINS, "INXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "inx") and (toks[pos+1][0] == T_DREW)) else
+   (ASTINS, "DEXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "dex") and (toks[pos+1][0] == T_DREW)) else
    (print("kasm: unknown instruction", toks[pos]) and exit(1))
   );
 
@@ -474,6 +486,9 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xBB,), pos+1)                                if (b[1] == "STDS") else
    ((0xBC,), pos+1)                                if (b[1] == "STDG") else
    ((0x03, b[2]), pos+1)                           if (b[1] == "STI8") else
+   ((0x04,), pos+1)                                if (b[1] == "IRET") else
+   ((0x40, *As24(labels[b[2]])), pos+1)            if (b[1] == "INXwl") else
+   ((0x42, *As24(labels[b[2]])), pos+1)            if (b[1] == "DEXwl") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 

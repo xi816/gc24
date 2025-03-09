@@ -170,18 +170,18 @@ U8 DEXb(GC* gc) {
 
 // 40           inx @imm24
 U8 INXw(GC* gc) {
-  U16 addr = Read24(gc, gc->PC+1);
-  U16 a = ReadWord(gc, addr)+1;
-  WriteWord(gc, addr, a);
+  U32 addr = Read24(gc, gc->PC+1);
+  U16 a = ReadWord(gc, addr);
+  WriteWord(gc, addr, a+1);
   gc->PC += 4;
   return 0;
 }
 
 // 42           dex @imm24
 U8 DEXw(GC* gc) {
-  U16 addr = Read24(gc, gc->PC+1);
-  U16 a = ReadWord(gc, addr)-1;
-  WriteWord(gc, addr, a);
+  U32 addr = Read24(gc, gc->PC+1);
+  U16 a = ReadWord(gc, addr);
+  WriteWord(gc, addr, a-1);
   gc->PC += 4;
   return 0;
 }
@@ -200,7 +200,8 @@ U8 INT(GC* gc) {
     gc_errno = StackPop(gc);
     return 1;
   case INT_READ:
-    StackPush(gc, getchar());
+    char a = getchar();
+    StackPush(gc, a);
     break;
   case INT_WRITE:
     putchar(StackPop(gc));
@@ -682,7 +683,7 @@ U8 PG0F(GC*); // Page 0F - Additional instructions page
 
 // Zero page instructions
 U8 (*INSTS[256])() = {
-  &HLT  , &TRAP , &STI  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri,
+  &HLT  , &TRAP , &STI  , &IRET , &UNK  , &UNK  , &UNK  , &UNK  , &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri,
   &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb,
   &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr ,
   &INXb , &UNK  , &DEXb , &UNK  , &UNK  , &UNK  , &UNK  , &CMPrc, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
