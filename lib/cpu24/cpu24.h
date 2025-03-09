@@ -269,14 +269,14 @@ U8 ADDrb(GC* gc) {
 
 // 58-5F        mov reg word[imm24]
 U8 ADDrw(GC* gc) {
-  gc->reg[(gc->mem[gc->PC]-0xD8) % 8].word += ReadWord(gc, Read24(gc, gc->PC+1));
+  gc->reg[(gc->mem[gc->PC]-0x58) % 8].word += ReadWord(gc, Read24(gc, gc->PC+1));
   gc->PC += 4;
   return 0;
 }
 
 // 60-67        mov byte[imm24] reg
 U8 ADDbr(GC* gc) {
-  gc->mem[Read24(gc, gc->PC+1)] += gc->reg[(gc->mem[gc->PC]-0xE0) % 8].word;
+  gc->mem[Read24(gc, gc->PC+1)] += gc->reg[(gc->mem[gc->PC]-0x60) % 8].word;
   gc->PC += 4;
   return 0;
 }
@@ -285,7 +285,7 @@ U8 ADDbr(GC* gc) {
 U8 ADDwr(GC* gc) {
   U16 addr = Read24(gc, gc->PC+1);
   U16 w = ReadWord(gc, addr);
-  WriteWord(gc, addr, w+gc->reg[(gc->mem[gc->PC]-0xE8) % 8].word);
+  WriteWord(gc, addr, w+gc->reg[(gc->mem[gc->PC]-0x60) % 8].word);
   gc->PC += 4;
   return 0;
 }
