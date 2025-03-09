@@ -25,29 +25,15 @@ int32_t main(int argc, char** argv) {
 
   // Compile GovnOS
   // printf("Compiling GovnOS...\n");
-  // system("./kasm -export govnos/boot.asm govnos/exports/boot");
-  // system("./kasm govnos/boot.asm govnos/boot.bin");
-  // system("./kasm -d -import govnos/exports/boot govnos/kernel.asm govnos/kernel.bin");
-  // system("./kasm -d -import govnos/exports/boot govnos/info.asm govnos/info.bin");
-  // system("./kasm -d -import govnos/exports/boot govnos/date.asm govnos/date.bin");
-  // system("./kasm -d -import govnos/exports/boot govnos/gsfetch.asm govnos/gsfetch.bin");
-  // system("./kasm -d -import govnos/exports/boot govnos/reboot.asm govnos/reboot.bin");
-  // system("./kasm -d -import govnos/exports/boot govnos/get.asm govnos/get.bin");
-  // system("./kasm -d -import govnos/exports/boot govnos/memed.asm govnos/memed.bin");
-  // system("./kasm -d govnos/scrclr.asm govnos/scrclr.bin");
-  system("./kasm -export boot.asm boot.exported");
-  system("./kasm boot.asm boot.bin");
+  system("./kasm -o 700000 -export govnos/govnbios.asm govnos/govnbios.exp");
+  system("./kasm -o 700000 govnos/govnbios.asm govnos/govnbios.bin");
+
+  system("./kasm -import govnos/govnbios.exp govnos/boot.asm govnos/boot.bin");
 
   // Load GovnOS
-  printf("Loading GovnOS into %s%s%s...\n", color, argv[1], rcolor);
-  sprintf(fcom, "./gboot %s boot.bin", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/kernel.bin \"kernel.bin\"", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/info.bin \"info\"", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/date.bin \"date\"", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/gsfetch.bin \"gsfetch\"", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/scrclr.bin \"scrclr\"", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/reboot.bin \"reboot\"", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/get.bin \"get\"", argv[1]); system(fcom);
-  // sprintf(fcom, "./gload %s govnos/memed.bin \"memed\"", argv[1]); system(fcom);
+  printf("Loading GovnBIOS into %s%s%s... ", color, argv[1], rcolor); fflush(stdout);
+  sprintf(fcom, "./gboot 700000 %s govnos/govnbios.bin", argv[1]); system(fcom);
+  printf("Loading GovnOS into %s%s%s... ", color, argv[1], rcolor); fflush(stdout);
+  sprintf(fcom, "./gboot C00000 %s govnos/boot.bin", argv[1]); system(fcom);
   return 0;
 }

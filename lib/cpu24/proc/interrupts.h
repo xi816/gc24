@@ -7,5 +7,6 @@
 
 // Videobuffer
 #define INT_VIDEO_FLUSH  0x11 // flush the videobuffer
+#define INT_VIDEO_CLEAR  0x12 // clear the videobuffer
 #define INT_RAND         0x21 // get random number to dx
 #define INT_WAIT         0x22 // wait dx milliseconds

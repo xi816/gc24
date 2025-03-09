@@ -5,17 +5,16 @@
 
 int8_t status(uint8_t stat) {
   if (stat) {
-    puts("gboot: bootable binary written succesfully");
+    puts("\033[92msuccess\033[0m");
     return 0;
   }
   else {
-    puts("gboot: bootable binary was not written");
+    puts("\033[91mfail\033[0m");
     return 1;
   }
 }
 
 int main(int argc, char** argv) {
-  uint32_t BootSectorStart = 0xC00000;
   if (argc == 1) {
     fprintf(stderr, "gboot: \033[91mfatal error:\033[0m no files given\n");
     return status(0);
@@ -24,14 +23,15 @@ int main(int argc, char** argv) {
     fprintf(stderr, "gboot: \033[91mfatal error:\033[0m no bootable code given\n");
     return status(0);
   }
-  FILE* drvfile = fopen(argv[1], "r+b");
-  FILE* bsfile = fopen(argv[2], "rb");
+  uint32_t offset = strtol(argv[1], NULL, 16);
+  FILE* drvfile = fopen(argv[2], "r+b");
+  FILE* bsfile = fopen(argv[3], "rb");
   if (!drvfile) {
-    fprintf(stderr, "gboot: \033[91mfatal error:\033[0m drive `%s` not found\n", argv[1]);
+    fprintf(stderr, "gboot: \033[91mfatal error:\033[0m drive `%s` not found\n", argv[2]);
     return status(0);
   }
   if (!bsfile) {
-    fprintf(stderr, "gboot: \033[91mfatal error:\033[0m bootable binary `%s` not found\n", argv[2]);
+    fprintf(stderr, "gboot: \033[91mfatal error:\033[0m bootable binary `%s` not found\n", argv[3]);
     return status(0);
   }
   fseek(drvfile, 0, SEEK_END);
@@ -47,8 +47,7 @@ int main(int argc, char** argv) {
   fseek(bsfile, 0, SEEK_SET);
   fread(bsbuf, 1, bslen, bsfile);
 
-  printf("gboot: writing to disk (%d bytes ROM)\n", drvlen);
-  memcpy(drvbuf+BootSectorStart, bsbuf, bslen);
+  memcpy(drvbuf+offset, bsbuf, bslen);
   fseek(drvfile, 0, SEEK_SET);
   fwrite(drvbuf, 1, drvlen, drvfile);
 

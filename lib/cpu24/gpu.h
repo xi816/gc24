@@ -47,13 +47,21 @@ U0 GGinit(gc_gg16* gg, SDL_Renderer* r) {
   SDL_RenderClear(r);
 }
 
-U0 GGpage(GC* gc, SDL_Renderer* r) {
+U0 GGflush(GC* gc) {
+  U8 byte;
+  byte = gc->mem[0x450000];
+  SDL_SetRenderDrawColor(gc->renderer, rgbv[byte%16].r, rgbv[byte%16].g, rgbv[byte%16].b, 0xFF);
+  memset(gc->mem+0x400000, byte, VGASIZE);
+  SDL_RenderPresent(gc->renderer);
+}
+
+U0 GGpage(GC* gc) {
   U8 byte;
   for (U32 i = 0; i < VGASIZE; i++) {
     byte = gc->mem[0x400000+i];
-    SDL_SetRenderDrawColor(r, rgbv[byte%16].r, rgbv[byte%16].g, rgbv[byte%16].b, 0xFF);
-    SDL_RenderDrawPoint(r, i%WINW, i/WINW);
-    SDL_RenderDrawPoint(r, (i+1)%WINW, (i+1)/WINW);
+    SDL_SetRenderDrawColor(gc->renderer, rgbv[byte%16].r, rgbv[byte%16].g, rgbv[byte%16].b, 0xFF);
+    SDL_RenderDrawPoint(gc->renderer, i%WINW, i/WINW);
+    SDL_RenderDrawPoint(gc->renderer, (i+1)%WINW, (i+1)/WINW);
   }
-  SDL_RenderPresent(r);
+  SDL_RenderPresent(gc->renderer);
 }

@@ -211,7 +211,10 @@ U8 INT(GC* gc) {
     Reset(gc);
     return 0;
   case INT_VIDEO_FLUSH:
-    GGpage(gc, gc->renderer);
+    GGpage(gc);
+    break;
+  case INT_VIDEO_CLEAR:
+    GGflush(gc);
     break;
   case INT_RAND:
     gc->reg[DX].word = rand() % 65536;

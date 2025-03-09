@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#define HEADER_SIZE 32
+
 int main(int argc, char** argv) {
-  uint8_t HEADER[32] = "\x42GOVNFS2.0\0\0\0\0\0\0Z";
+  uint8_t HEADER[HEADER_SIZE] = "\x42GOVNFS2.0\0\0\0\0\0\0Z";
   srand(time(NULL));
   for (uint8_t i = 0x0C; i < 0x10; i++) {
     HEADER[i] = rand() % 256;
@@ -30,6 +32,7 @@ int main(int argc, char** argv) {
 
   printf("mkfs.govnfs: erasing the header (%d bytes ROM)\n", drvlen);
   memcpy(drvbuf, HEADER, 32);
+  memset(drvbuf+HEADER_SIZE, 0x00, drvlen-HEADER_SIZE);
   fwrite(drvbuf, 1, drvlen, drv);
   fclose(drv);
   return 0;

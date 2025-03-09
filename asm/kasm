@@ -542,6 +542,7 @@ def main(argc: int, argv: list) -> int:
   #   return 1;
   argp: int = 1;
   imp_files = [];
+  offset = 0x030000;
   while (argp < argc):
     match (argv[argp]):
       case "-export":
@@ -549,6 +550,9 @@ def main(argc: int, argv: list) -> int:
         argp += 1;
       case "-import":
         imp_files.append(argv[argp+1]);
+        argp += 2;
+      case "-o":
+        offset = int(argv[argp+1], base=16);
         argp += 2;
       case "-d":
         diskmode = True;
@@ -579,7 +583,7 @@ def main(argc: int, argv: list) -> int:
     print("Fatal error. Can't compile");
     exit(tokens);
   ast, labs = Parse(tokens, progname, exportmode);
-  labs = OffsetLabs(labs, 0x030000);
+  labs = OffsetLabs(labs, offset);
   if (exportmode):
     ExportLabs(progname, labs, outname);
     exit(1);

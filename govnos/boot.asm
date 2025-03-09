@@ -1,13 +1,6 @@
 ; Bootloader
 reboot: jmp boot
 
-puts:
-  lodb %si %ax
-  cmp %ax $00
-  re
-  push %ax
-  int 2
-  jmp puts
 scans:
   int 1
   pop %ax
@@ -62,3 +55,5 @@ clen:        reserve 2 bytes
 
 bs_seq:      bytes "^H ^H^@"
 env_PS:      bytes "# ^@"
+
+bse:         bytes $AA $55

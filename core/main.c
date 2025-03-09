@@ -31,11 +31,11 @@ U8 usage() {
 /* loadBootSector -- Load bootable code from the drive
    starting at $C00000
 */
-U8 loadBootSector(U8* drive, U8* mem) {
+U8 loadBootSector(U8* drive, U8* mem, U32 start, U32 to) {
   U8* odrive = drive;
   while (1) {
-    if ((*(drive+0xC00000) == 0xAA) && (*(drive+0xC00001) == 0x55)) break;
-    *(mem+0x030000) = *(drive+0xC00000);
+    if ((*(drive+start) == 0xAA) && (*(drive+start+1) == 0x55)) break;
+    *(mem+to) = *(drive+start);
     mem++;
     drive++;
   }
@@ -122,7 +122,8 @@ U8 main(I32 argc, I8** argv) {
     fread(gc.rom, 1, ROMSIZE, fl);
     fclose(fl);
     // Load the boot sector from $C00000 into RAM ($030000)
-    loadBootSector(gc.rom, gc.mem);
+    loadBootSector(gc.rom, gc.mem, 0x700000, 0x700000);
+    loadBootSector(gc.rom, gc.mem, 0xC00000, 0x030000);
     // Setup the pin bit 7 to 1 (drive)
     gc.pin |= 0b10000000;
   }
