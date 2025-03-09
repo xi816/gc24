@@ -451,11 +451,11 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xA7, *As24(labels[b[2]])), pos+1)            if (b[1] == "JNIa") else
    ((0xB8, *As24(labels[b[2]])), pos+1)            if (b[1] == "LOOPa") else
    ((0x10+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "SUBri") else
-   ((0xC8, *As24(b[2][1])), pos+1)                 if (b[1] == "SUBrc") else
+   ((0xC8, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "SUBrc") else
    ((0x08+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "MULri") else
-   ((0xC9, *As24(b[2][1])), pos+1)                 if (b[1] == "MULrc") else
+   ((0xC9, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "MULrc") else
    ((0x80+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "DIVri") else
-   ((0xCA, *As24(b[2][1])), pos+1)                 if (b[1] == "DIVrc") else
+   ((0xCA, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "DIVrc") else
    ((0x20+b[2],), pos+1)                           if (b[1] == "INXr") else
    ((0x28+b[2],), pos+1)                           if (b[1] == "DEXr") else
    ((0x30, *As24(b[2])), pos+1)                    if (b[1] == "INXb") else

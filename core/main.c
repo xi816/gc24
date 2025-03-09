@@ -111,6 +111,7 @@ U8 main(I32 argc, I8** argv) {
     gc.rom[0x11] = '#';
     gc.rom[0x21] = 0xF7;
     gc.pin &= 0b01111111;
+    gc.PC = 0x030000;
   }
   else { // Load a disk
     FILE* fl = fopen(filename, "rb");
