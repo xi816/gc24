@@ -12,7 +12,7 @@ char* regf[16] = {
 U8 cli_DisplayReg(GC* gc) {
   for (U8 i = 0; i < 8; i++) {
     if ((i != 0) && !(i%4)) putchar(10);
-    printf("%s:\033[93m$%06X\033[0m  ", regf[i], gc->reg[i]);
+    printf("%s:\033[93m$%06X\033[0m  ", regf[i], gc->reg[i].word);
   }
   printf("\nPS:\033[93m%08b\033[0m ", gc->PS);
   printf("PC:\033[93m$%06X\033[0m  ", gc->PC);

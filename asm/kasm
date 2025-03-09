@@ -299,6 +299,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "DIVri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "div") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "DIVrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "div") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "JMPa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jmp") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "JMP2", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jmp") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "JEa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "je") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "JNEa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jne") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "JCa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "jc") and (toks[pos+1][0] == T_ID)) else
@@ -439,6 +440,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0x60+b[2][1], *As24(b[2][0])), pos+1)         if (b[1] == "ADDbr") else
    ((0x68+b[2][1], *As24(b[2][0])), pos+1)         if (b[1] == "ADDwr") else
    ((0x86, *As24(labels[b[2]])), pos+1)            if (b[1] == "JMPa") else
+   ((0x86, *As24(b[2])), pos+1)                    if (b[1] == "JMP2") else
    ((0xA0, *As24(labels[b[2]])), pos+1)            if (b[1] == "JEa") else
    ((0xA1, *As24(labels[b[2]])), pos+1)            if (b[1] == "JNEa") else
    ((0xA2, *As24(labels[b[2]])), pos+1)            if (b[1] == "JCa") else

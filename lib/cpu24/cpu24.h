@@ -731,7 +731,7 @@ U8 PG0F(GC* gc) {   // 0FH
 U0 Reset(GC* gc) {
   gc->reg[SP].word = 0xFEFFFF;
   gc->reg[BP].word = 0xFEFFFF;
-  gc->PC = 0x030000;
+  gc->PC = 0x700000;
 
   // Reset the general purpose registers
   for (U8 i = 0; i < 6; i++) 
