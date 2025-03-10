@@ -29,12 +29,27 @@ scans:
 .end:
   mov %ax $00
   stob %si %ax
-  trap
+  ret
+
+strcmp:
+  lodb %si %ax
+  lodb %gi %bx
+  cmp %ax %bx
+  jne .fail
+  cmp %ax $00
+  je .eq
+  jmp strcmp
+.eq:
+  mov %ax $00
+  ret
+.fail:
+  mov %ax $01
   ret
 
 boot:
   mov %si welcome_msg
   call puts
+shell:
 .prompt:
   mov %si env_PS
   call puts
@@ -44,15 +59,37 @@ boot:
   stow %si %ax
   mov %si command
   call scans
+.process:
   mov %si command
-  call puts
-  push $0A
-  int 2
-  jmp .prompt
+  mov %gi com_hi
+  call strcmp
+  cmp %ax $00
+  je govnos_hi
 
+  mov %si command
+  mov %gi com_exit
+  call strcmp
+  cmp %ax $00
+  je govnos_exit
+
+  mov %si bad_command
+  call puts
+.aftexec:
+  jmp .prompt
+govnos_hi:
+  mov %si hai_world
+  call puts
+  jmp shell.aftexec
+govnos_exit:
   hlt
+  jmp shell.aftexec
 
 welcome_msg: bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
+bad_command: bytes "Bad command.$^@"
+
+com_hi:      bytes "hi^@"
+com_exit:    bytes "exit^@"
+hai_world:   bytes "hai world :3$^@"
 
 command:     reserve 64 bytes
 clen:        reserve 2 bytes
