@@ -16,9 +16,13 @@ GovnBIOS:
   call puts
   mov %si GOVNOSMSG
   call puts
-
+.key:
   int 1
   pop %ax
+  cmp %ax $0A
+  je .loadGovnOS
+  jmp .key
+.loadGovnOS:
   mov %si CLEARSCR_BOOT
   call puts
   jmp $030000

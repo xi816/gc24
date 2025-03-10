@@ -29,6 +29,7 @@ scans:
 .end:
   mov %ax $00
   stob %si %ax
+  trap
   ret
 
 boot:
@@ -38,6 +39,9 @@ boot:
   mov %si env_PS
   call puts
 
+  mov %si clen
+  mov %ax $0000
+  stow %si %ax
   mov %si command
   call scans
   mov %si command
