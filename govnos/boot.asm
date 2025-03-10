@@ -46,6 +46,16 @@ strcmp:
   mov %ax $01
   ret
 
+strnul:
+  lodb %si %ax
+  cmp %ax $00
+  je .nul
+  mov %ax $01
+  ret
+.nul:
+  mov %ax $00
+  ret
+
 boot:
   mov %si welcome_msg
   call puts
@@ -60,6 +70,11 @@ shell:
   mov %si command
   call scans
 .process:
+  mov %si command
+  call strnul
+  cmp %ax $00
+  je .aftexec
+
   mov %si command
   mov %gi com_hi
   call strcmp
