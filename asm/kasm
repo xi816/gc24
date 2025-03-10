@@ -571,11 +571,6 @@ def main(argc: int, argv: list) -> int:
   if (argc == 3):
     progname = argv[1];
     outname = argv[2];
-  # elif (argc == 4):
-  #   print(f"\033[31mUnknown\033[0m argument `{argv[1]}`");
-  #   return 1;
-  #   progname = argv[2];
-  #   outname = argv[3];
 
   with open(progname, "r") as fl:
     src = fl.read();

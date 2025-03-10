@@ -3,6 +3,9 @@
 #include <cpu24/proc/interrupts.h>
 #include <cpu24/gpu.h>
 
+#define BIOSNOBNK 16
+#define BANKSIZE 65536
+
 /*
   CPU info:
   Speed: 5THz
@@ -773,12 +776,16 @@ U0 RegDump(GC* gc) {
 
 U8 Exec(GC* gc, const U32 memsize) {
   U8 exc = 0;
+  U8 step = 0;
+  U32 insts = 0;
   execloop:
-    // getchar();
     exc = (INSTS[gc->mem[gc->PC]])(gc);
-    // RegDump(gc);
-    // MemDump(gc, 0x030042, 0x030062, 1);
-    // StackDump(gc, 12);
+    insts++;
+    printh(gc->mem[gc->PC], "\n");
+    // getchar();
+    MemDump(gc, 0x030000, 0x030010, 1);
+    // if (gc->PC == 0x030000) (step = 1);
+    // if (step) { getchar(); printh(gc->PC, "\n"); insts++; printf("%02X\n", insts); }
     if (exc != 0) return gc_errno;
     goto execloop;
   return exc;

@@ -31,4 +31,4 @@ CLEARSCR: bytes "^[[44m^[[2J^[[H^@"
 CLEARSCR_BOOT: bytes "^[[0m^[[2J^[[H^@"
 WELCOMEMSG: bytes "^[[47m^[[30mGovnBIOS 0.1 by Xi-816^[[K$^[[43m^[[K ^[[103mBoot^[[44m$^@"
 GOVNOSMSG: bytes "^[[37mPress Enter to boot.$Well, choose GovnOS because you don't have any choice for now :)$^@"
-BiosBSE: bytes $AA $55
+biosBSE: bytes $AA $55

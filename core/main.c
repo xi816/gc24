@@ -28,18 +28,16 @@ U8 usage() {
   return 0;
 }
 
-/* loadBootSector -- Load bootable code from the drive
-   starting at $C00000
-*/
 U8 loadBootSector(U8* drive, U8* mem, U32 start, U32 to) {
-  U8* odrive = drive;
+  U32 oto = to;
   while (1) {
+    printf("Loading from #%06X to #%06X\n", start, to);
     if ((*(drive+start) == 0xAA) && (*(drive+start+1) == 0x55)) break;
     *(mem+to) = *(drive+start);
-    mem++;
-    drive++;
+    to++;
+    start++;
   }
-  printf("gc24: read %d bytes from ROM\n", drive-odrive+1);
+  printf("gc24: read %d bytes from ROM\n", to-oto+1);
   return 0;
 }
 
@@ -51,6 +49,7 @@ U8 main(I32 argc, I8** argv) {
   U8 disasmmode = 0;
   U8 argp = 1; // 256 arguments is enough for everyone
   U8* filename;
+  U8* biosfile = NULL;
 
   driveboot = 0x000000;
   parseArgs:
@@ -64,6 +63,10 @@ U8 main(I32 argc, I8** argv) {
     // Load from the disk
     if ((!strcmp(argv[argp], "disk")) || (!strcmp(argv[argp], "-d")) || (!strcmp(argv[argp], "--disk"))) {
       driveboot = 0x0091EE;
+      argp++;
+    }
+    else if ((!strcmp(argv[argp], "bios")) || (!strcmp(argv[argp], "-b")) || (!strcmp(argv[argp], "--bios"))) {
+      biosfile = argv[argp+1];
       argp++;
     }
     else if ((!strcmp(argv[argp], "cli")) || (!strcmp(argv[argp], "-c")) || (!strcmp(argv[argp], "--cli"))) {
@@ -85,6 +88,9 @@ U8 main(I32 argc, I8** argv) {
     }
   }
 
+  U8 biosbuf[BIOSNOBNK * BANKSIZE];
+  biosbuf[0x000000] = 0xAA;
+  biosbuf[0x000001] = 0x55;
   // Create a virtual CPU
   GC gc;
   gc.pin = 0b00000000; // Reset the pin
@@ -98,7 +104,7 @@ U8 main(I32 argc, I8** argv) {
       old_st;
       return 1;
     }
-    fread(gc.mem+0x030000, 1, 65536, fl);
+    fread(gc.mem+0x030000, 1, MEMSIZE, fl);
     fclose(fl);
     if (disasmmode) {
       if (disasm(gc.mem, MEMSIZE, stdout) == 1)
@@ -123,10 +129,23 @@ U8 main(I32 argc, I8** argv) {
     fread(gc.rom, 1, ROMSIZE, fl);
     fclose(fl);
     // Load the boot sector from $C00000 into RAM ($030000)
-    loadBootSector(gc.rom, gc.mem, 0x700000, 0x700000);
+    puts("Loading ROM to memory");
     loadBootSector(gc.rom, gc.mem, 0xC00000, 0x030000);
+    sleep(3);
     // Setup the pin bit 7 to 1 (drive)
     gc.pin |= 0b10000000;
+  }
+  if (biosfile != NULL) { // BIOS provided
+    FILE* fl = fopen(biosfile, "rb");
+    if (fl == NULL) {
+      fprintf(stderr, "\033[31mError\033[0m while opening %s\n", biosfile);
+      old_st;
+      return 1;
+    }
+    fread(biosbuf, 1, BIOSNOBNK*BANKSIZE, fl);
+    fclose(fl);
+    puts("Loading BIOS to memory");
+    loadBootSector(biosbuf, gc.mem, 0x000000, 0x700000);
   }
 
   // GPU
