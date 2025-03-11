@@ -1,26 +1,30 @@
-; This is just a test, don't expect it to run without
-; bugs
+/* GovnBIOS -- a basic input/output system for Govno Core 24.
+   BIOS is loaded into $700000 in memory.
+*/
 
-  jmp GovnBIOS
+; This is just a test, don't expect it to run with no bugs
+
+GovnBIOSReset: jmp GovnBIOS
 puts:
-  using %ax %si
   lodb %si %ax
   cmp %ax $00
-  re
+  je .done
   push %ax
   int 2
   jmp puts
-  back %si %ax
+.done:
+  iret
 GovnBIOS:
+  ; Set up the interrupt table
   mov %si puts
   sti $81
 
   mov %si CLEARSCR
-  call puts
+  int $81
   mov %si WELCOMEMSG
-  call puts
+  int $81
   mov %si GOVNOSMSG
-  call puts
+  int $81
 .key:
   int 1
   pop %ax
@@ -29,11 +33,11 @@ GovnBIOS:
   jmp .key
 .loadGovnOS:
   mov %si CLEARSCR_BOOT
-  call puts
+  int $81
   jmp $030000
 
-CLEARSCR: bytes "^[[44m^[[2J^[[H^@"
+CLEARSCR:      bytes "^[[44m^[[2J^[[H^@"
 CLEARSCR_BOOT: bytes "^[[0m^[[2J^[[H^@"
-WELCOMEMSG: bytes "^[[47m^[[30mGovnBIOS 0.1 by Xi-816^[[K$^[[43m^[[K ^[[103mBoot^[[44m$^@"
-GOVNOSMSG: bytes "^[[37mPress Enter to boot.$Well, choose GovnOS because you don't have any choice for now :)$^@"
-biosBSE: bytes $AA $55
+WELCOMEMSG:    bytes "^[[47m^[[30mGovnBIOS 0.1 by Xi-816^[[K$^[[43m^[[K ^[[103mBoot^[[44m$^@"
+GOVNOSMSG:     bytes "^[[37mPress Enter to boot.$Well, choose GovnOS because you don't have any choice for now :)$^@"
+biosBSE:       bytes $AA $55

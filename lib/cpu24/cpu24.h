@@ -45,29 +45,32 @@ U0 PageDump(GC* gc, U8 page);
 U0 StackDump(GC* gc, U16 c);
 U0 RegDump(GC* gc);
 
+// NOTE: every multibyte reads and writes are done in Little Endian
+
+/* ReadWord -- Read a 16-bit value from memory */
 gcword ReadWord(GC* gc, U32 addr) {
   return (gc->mem[addr]) + (gc->mem[addr+1] << 8);
 }
 
+/* Read24 -- Read a 24-bit value from memory */
 U32 Read24(GC* gc, U32 addr) {
   return (gc->mem[addr]) + (gc->mem[addr+1] << 8) + (gc->mem[addr+2] << 16);
 }
 
+/* WriteWord -- Write a 16-bit value to memory */
 U0 WriteWord(GC* gc, U32 addr, U16 val) {
-  // Least significant byte goes first
-  // $1448 -> $48,$14
   gc->mem[addr] = (val % 256);
   gc->mem[addr+1] = (val >> 8);
 }
 
+/* Write24 -- Write a 24-bit value to memory */
 U0 Write24(GC* gc, U32 addr, U32 val) {
-  // Least significant byte goes first
-  // $694200 -> $00,$42,$69
   gc->mem[addr] = (val % 256);
   gc->mem[addr+1] = ((val >> 8) % 256);
   gc->mem[addr+2] = ((val >> 16) % 256);
 }
 
+/* StackPush -- Push a 24-bit value onto the stack */
 gcbyte StackPush(GC* gc, U32 val) {
   gc->mem[gc->reg[SP].word] = (val >> 16);
   gc->mem[gc->reg[SP].word-1] = ((val >> 8) % 256);
@@ -76,18 +79,27 @@ gcbyte StackPush(GC* gc, U32 val) {
   return 0;
 }
 
+/* StackPop -- Pop a 24-bit value and return it */
 U32 StackPop(GC* gc) {
   gc->reg[SP].word += 3;
   return Read24(gc, gc->reg[SP].word-2);
 }
 
-gcrc_t ReadRegClust(U8 clust) { // Read a register cluster
-  // The register address is 4 bytes
+/* ReadRegClust -- A function to read the register cluster
+  A register cluster is a byte that consists of 2 register pointers:
+  It is divided into 3 parts like this:
+    00 001 100
+  The first 3-byte value is a first operand, and the last 3-byte value
+  is a second operand. The first 2 bytes of a byte are unused.
+  The function returns a structure with two members as register pointers.
+*/
+gcrc_t ReadRegClust(U8 clust) {
   gcrc_t rc = {((clust&0b00111000)>>3), (clust&0b00000111)};
   return rc;
 }
 
-U8 UNK(GC* gc) {    // Unknown instruction
+// The UNK function is ran when an illegal opcode is encountered
+U8 UNK(GC* gc) {
   fprintf(stderr, "\033[31mIllegal\033[0m instruction \033[33m%02X\033[0m\nAt position %06X\n", gc->mem[gc->PC], gc->PC);
   old_st_legacy;
   gc_errno = 1;
@@ -110,7 +122,7 @@ U8 TRAP(GC* gc) {
 
 // 03           sti
 U8 STI(GC* gc) {
-  Write24(gc, (((gc->mem[gc->PC+1]-0x81)*3)+0xFF0000), gc->reg[SI].word);
+  Write24(gc, (((gc->mem[gc->PC+1]-0x80)*3)+0xFF0000), gc->reg[SI].word);
   gc->PC += 2;
   return 0;
 }

@@ -40,7 +40,7 @@ KEY2   = [
   "jg", "jl", "lodb", "lodw", "lodh", "trap", "call", "ret",
   "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push",
   "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop",
-  "ldds", "lddg", "stds", "stdg", "sti"
+  "ldds", "lddg", "stds", "stdg", "sti", "iret"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 

@@ -30,6 +30,8 @@ U8 usage() {
   return 0;
 }
 
+/* loadBootSector -- loads a block of data from one pointer to
+   another, until it finds an $AA$55 */
 U8 loadBootSector(U8* drive, U8* mem, U32 start, U32 to) {
   U32 oto = to;
   while (1) {
@@ -49,7 +51,7 @@ U8 main(I32 argc, I8** argv) {
   U8 climode = 0;
   U8 disasmmode = 0;
   U8 argp = 1; // 256 arguments is enough for everyone
-  U8* filename;
+  U8* filename = NULL;
   U8* biosfile = NULL;
 
   driveboot = 0;
