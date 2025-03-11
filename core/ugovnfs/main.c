@@ -13,6 +13,38 @@ uint8_t readHeader(uint8_t* disk) {
   return 0;
 }
 
+uint16_t firstFileSector(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
+  // Compile the filename and tag into a GovnFS 2.0 header
+  uint8_t combined[16];
+  strcpy(combined, filename);
+  memcpy(combined+13, tag, 3);
+
+  uint16_t sector = 0x0001;
+  while (disk[sector*512] != 0xF7) {
+    if ((disk[sector*512] == 0x01) && (memcmp(disk+sector*512, combined, 16))) {
+      printf("File #/%s/%s found\n", filename, tag);
+      return sector;
+    }
+    sector++;
+  }
+  printf("File #/%s/%s was not found\n", filename, tag);
+  return 0;
+}
+
+uint16_t nextLink(uint8_t* disk, uint16_t sector) {
+  return (((disk[sector*512+0xFF])<<8) + (disk[sector*512+0xFE]));
+}
+
+uint8_t getFileSize(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
+  uint16_t fs = firstFileSector(disk, filename, tag);
+  uint32_t filesize = 494;
+  while (fs = nextLink(disk, fs)) filesize += 494;
+  return filesize;
+}
+
+uint8_t readFile(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
+}
+
 // The header is the first 32 bytes of the disk
 uint8_t readFilenames(uint8_t* disk, char c) {
   printf("Listing %c/\n", c);
@@ -60,6 +92,11 @@ int main(int argc, char** argv) {
   }
   else if (!strcmp(argv[1], "-l")) {
     return readFilenames(disk, disk[0x10]);
+  }
+  else if (!strcmp(argv[1], "-s")) {
+    uint16_t fs = firstFileSector(disk, argv[3], argv[4]);
+    printf("The file #/%s/%s starts at #%06X\n", argv[3], argv[4], fs*512);
+    return 0;
   }
   else {
     printf("ugovnfs: \033[91mfatal error:\033[0m unknown argument: `%s`\n", argv[1]);
