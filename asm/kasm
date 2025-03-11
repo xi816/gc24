@@ -104,7 +104,7 @@ def Lex(prog: str, filename: str):
       pos += 1;
       while ((prog[pos] != "*") or (prog[pos+1] != "/")):
         pos += 1;
-      pos += 1;
+      pos += 2;
     elif (prog[pos] in WHI):
       pos += 1;
     elif (prog[pos] == "\n"):

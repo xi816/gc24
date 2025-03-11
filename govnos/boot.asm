@@ -87,12 +87,22 @@ shell:
   cmp %ax $00
   je govnos_exit
 
+  mov %si command
+  mov %gi com_help
+  call strcmp
+  cmp %ax $00
+  je govnos_help
+
   mov %si bad_command
   int $81
 .aftexec:
   jmp .prompt
 govnos_hi:
   mov %si hai_world
+  int $81
+  jmp shell.aftexec
+govnos_help:
+  mov %si help_msg
   int $81
   jmp shell.aftexec
 govnos_exit:
@@ -102,7 +112,12 @@ govnos_exit:
 welcome_msg: bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
 bad_command: bytes "Bad command.$^@"
 
+help_msg:    bytes "GovnOS help page 1/1$"
+             bytes "  help        Show help$"
+             bytes "  exit        Exit from the shell$^@"
+
 com_hi:      bytes "hi^@"
+com_help:    bytes "help^@"
 com_exit:    bytes "exit^@"
 hai_world:   bytes "hai world :3$^@"
 

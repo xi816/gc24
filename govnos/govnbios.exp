@@ -1,3 +1,4 @@
+GovnBIOSReset	700000
 puts	700004
 puts.done	700016
 GovnBIOS	700017
