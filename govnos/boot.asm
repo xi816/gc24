@@ -21,7 +21,7 @@ scans:
 .back_strict:
   push %si
   mov %si bs_seq
-  call puts
+  int $81
   pop %si
   dex %si
   dex @clen
@@ -58,11 +58,11 @@ strnul:
 
 boot:
   mov %si welcome_msg
-  call puts
+  int $81
 shell:
 .prompt:
   mov %si env_PS
-  call puts
+  int $81
 
   mov %si clen
   mov %ax $0000
@@ -88,12 +88,12 @@ shell:
   je govnos_exit
 
   mov %si bad_command
-  call puts
+  int $81
 .aftexec:
   jmp .prompt
 govnos_hi:
   mov %si hai_world
-  call puts
+  int $81
   jmp shell.aftexec
 govnos_exit:
   hlt

@@ -3,13 +3,18 @@
 
   jmp GovnBIOS
 puts:
+  using %ax %si
   lodb %si %ax
   cmp %ax $00
   re
   push %ax
   int 2
   jmp puts
+  back %si %ax
 GovnBIOS:
+  mov %si puts
+  sti $81
+
   mov %si CLEARSCR
   call puts
   mov %si WELCOMEMSG

@@ -110,7 +110,7 @@ U8 TRAP(GC* gc) {
 
 // 03           sti
 U8 STI(GC* gc) {
-  Write24(gc, (((gc->mem[gc->PC+1]-0x80)*3)+0xFF0000), gc->reg[SI].word);
+  Write24(gc, (((gc->mem[gc->PC+1]-0x81)*3)+0xFF0000), gc->reg[SI].word);
   gc->PC += 2;
   return 0;
 }
@@ -689,7 +689,7 @@ U8 PG0F(GC*); // Page 0F - Additional instructions page
 
 // Zero page instructions
 U8 (*INSTS[256])() = {
-  &HLT  , &TRAP , &STI  , &IRET , &UNK  , &UNK  , &UNK  , &UNK  , &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri,
+  &HLT  , &TRAP , &UNK  , &STI  , &IRET , &UNK  , &UNK  , &UNK  , &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri,
   &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb,
   &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr ,
   &INXb , &UNK  , &DEXb , &UNK  , &UNK  , &UNK  , &UNK  , &CMPrc, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,
@@ -781,12 +781,7 @@ U8 Exec(GC* gc, const U32 memsize) {
   execloop:
     exc = (INSTS[gc->mem[gc->PC]])(gc);
     insts++;
-    // printh(gc->mem[gc->PC], "\n");
-    // getchar();
-    // MemDump(gc, 0x030000, 0x030010, 1);
-    // if (gc->PC == 0x030000) (step = 1);
-    // if (step) { getchar(); printh(gc->PC, "\n"); insts++; printf("%02X\n", insts); }
-    if (exc != 0) return gc_errno;
+    if (exc != 0) { printf("gc24: executed %d instructions\n", insts); return gc_errno; }
     goto execloop;
   return exc;
 }

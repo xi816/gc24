@@ -19,12 +19,14 @@
 /* usage -- Show usage of the emulator */
 U8 usage() {
   puts("gc24: a Govno Core 24 emulator");
-  puts("Syntax:");
-  puts("  gc24        [file]  Load the file directly to memory");
-  puts("  gc24 cli    [file]  Start the emulator in CLI mode");
-  puts("  gc24 disk   [file]  Load the file as ROM");
-  puts("  gc24 disasm [file]  Disassemble the binary file");
-  puts("  gc24 help           Show help");
+  puts("Syntax: gc24 [OPTIONS] <file>");
+  puts("  gc24   <file>  Load the file directly to memory");
+  puts("Options:");
+  puts("  bios   <file>  Load the file as BIOS");
+  puts("  cli            Start the emulator in CLI mode");
+  puts("  disk   <file>  Load the file as ROM");
+  puts("  disasm <file>  Disassemble the binary file instead of running it");
+  puts("  help           Show help");
   return 0;
 }
 
@@ -51,7 +53,6 @@ U8 main(I32 argc, I8** argv) {
   U8* biosfile = NULL;
 
   driveboot = 0;
-  parseArgs:
   if (argc == 1) {
     old_st;
     usage();
@@ -164,6 +165,8 @@ U8 main(I32 argc, I8** argv) {
     if (fl == NULL) {
       fprintf(stderr, "\033[31mError\033[0m while opening %s\n", filename);
       old_st;
+      free(gc.rom);
+      free(gc.mem);
       return 1;
     }
     fwrite(gc.rom, 1, ROMSIZE, fl);
