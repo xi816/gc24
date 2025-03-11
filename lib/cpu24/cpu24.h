@@ -781,9 +781,9 @@ U8 Exec(GC* gc, const U32 memsize) {
   execloop:
     exc = (INSTS[gc->mem[gc->PC]])(gc);
     insts++;
-    printh(gc->mem[gc->PC], "\n");
+    // printh(gc->mem[gc->PC], "\n");
     // getchar();
-    MemDump(gc, 0x030000, 0x030010, 1);
+    // MemDump(gc, 0x030000, 0x030010, 1);
     // if (gc->PC == 0x030000) (step = 1);
     // if (step) { getchar(); printh(gc->PC, "\n"); insts++; printf("%02X\n", insts); }
     if (exc != 0) return gc_errno;

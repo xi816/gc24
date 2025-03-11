@@ -31,7 +31,6 @@ U8 usage() {
 U8 loadBootSector(U8* drive, U8* mem, U32 start, U32 to) {
   U32 oto = to;
   while (1) {
-    printf("Loading from #%06X to #%06X\n", start, to);
     if ((*(drive+start) == 0xAA) && (*(drive+start+1) == 0x55)) break;
     *(mem+to) = *(drive+start);
     to++;
@@ -44,14 +43,14 @@ U8 loadBootSector(U8* drive, U8* mem, U32 start, U32 to) {
 U8 main(I32 argc, I8** argv) {
   srand(time(NULL));
   new_st;
-  U32 driveboot;
+  U8 driveboot;
   U8 climode = 0;
   U8 disasmmode = 0;
   U8 argp = 1; // 256 arguments is enough for everyone
   U8* filename;
   U8* biosfile = NULL;
 
-  driveboot = 0x000000;
+  driveboot = 0;
   parseArgs:
   if (argc == 1) {
     old_st;
@@ -62,12 +61,12 @@ U8 main(I32 argc, I8** argv) {
   while (argp < argc) {
     // Load from the disk
     if ((!strcmp(argv[argp], "disk")) || (!strcmp(argv[argp], "-d")) || (!strcmp(argv[argp], "--disk"))) {
-      driveboot = 0x0091EE;
+      driveboot = 1;
       argp++;
     }
     else if ((!strcmp(argv[argp], "bios")) || (!strcmp(argv[argp], "-b")) || (!strcmp(argv[argp], "--bios"))) {
       biosfile = argv[argp+1];
-      argp++;
+      argp += 2;
     }
     else if ((!strcmp(argv[argp], "cli")) || (!strcmp(argv[argp], "-c")) || (!strcmp(argv[argp], "--cli"))) {
       climode = 1;
@@ -129,9 +128,7 @@ U8 main(I32 argc, I8** argv) {
     fread(gc.rom, 1, ROMSIZE, fl);
     fclose(fl);
     // Load the boot sector from $C00000 into RAM ($030000)
-    puts("Loading ROM to memory");
     loadBootSector(gc.rom, gc.mem, 0xC00000, 0x030000);
-    sleep(3);
     // Setup the pin bit 7 to 1 (drive)
     gc.pin |= 0b10000000;
   }
@@ -144,7 +141,6 @@ U8 main(I32 argc, I8** argv) {
     }
     fread(biosbuf, 1, BIOSNOBNK*BANKSIZE, fl);
     fclose(fl);
-    puts("Loading BIOS to memory");
     loadBootSector(biosbuf, gc.mem, 0x000000, 0x700000);
   }
 
@@ -164,7 +160,7 @@ U8 main(I32 argc, I8** argv) {
   gravno_end;
   old_st;
   if (driveboot) { // Save the modified disk back
-    FILE* fl = fopen(argv[2], "wb");
+    FILE* fl = fopen(filename, "wb");
     if (fl == NULL) {
       fprintf(stderr, "\033[31mError\033[0m while opening %s\n", filename);
       old_st;
