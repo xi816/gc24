@@ -4,9 +4,9 @@
 #define AUDIO_SAMPLES 4096
 
 // Audio callback function
-void AudioCallback(void* userdata, Uint8* stream, int len) {
+void AudioCallback(void* userdata, U8* stream, int len) {
     static double phase = 0;
-    Sint16* buffer = (Sint16*)stream;
+    I16* buffer = (I16*)stream;
     int length = len / 2;
     double frequency = *((double*)userdata);
     
