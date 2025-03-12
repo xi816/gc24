@@ -10,3 +10,4 @@
 #define INT_VIDEO_CLEAR  0x12 // clear the videobuffer
 #define INT_RAND         0x21 // get random number to dx
 #define INT_WAIT         0x22 // wait dx milliseconds
+#define INT_BEEP         0x23 // play beep sound with frequency from stack
