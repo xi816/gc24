@@ -6,6 +6,11 @@
 #define BIOSNOBNK 16
 #define BANKSIZE 65536
 
+#define AUDIO_FREQUENCY 44100
+#define AUDIO_FORMAT AUDIO_S16SYS
+#define AUDIO_CHANNELS 1
+#define AUDIO_SAMPLES 4096
+
 /*
   CPU info:
   Speed: 5THz
@@ -240,25 +245,10 @@ U8 INT(GC* gc) {
   case INT_WAIT:
     usleep((U32)(gc->reg[DX].word)*1000); // the maximum is about 65.5 seconds
     break;
-  case INT_BEEP: {
-    U32 frequency = StackPop(gc);
-    if (frequency < 20 || frequency > 20000) break; // Validate range
-    // Генерация звука через SDL
-    SDL_AudioSpec want, have;
-    SDL_memset(&want, 0, sizeof(want));
-    want.freq = frequency;
-    want.format = AUDIO_S16;
-    want.channels = 1;
-    want.samples = 4096;
-    
-    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-    if (dev) {
-        SDL_PauseAudioDevice(dev, 0); // Start playback
-        SDL_Delay(200); // 200ms beep
-        SDL_CloseAudioDevice(dev);
-    }
+  case INT_BEEP:
+    double freq = (double)StackPop(gc);
+    PlayBeep(freq);
     break;
-  }
   default:
     fprintf(stderr, "gc24: \033[91mIllegal\033[0m hardware interrupt: $%02X\n", gc->mem[gc->PC+1]);
     return 1;
@@ -815,4 +805,44 @@ U8 Exec(GC* gc, const U32 memsize) {
     if (exc != 0) { printf("gc24: executed %d instructions\n", insts); return gc_errno; }
     goto execloop;
   return exc;
+}
+
+// Audio callback function
+void AudioCallback(void* userdata, Uint8* stream, int len) {
+    static double phase = 0;
+    Sint16* buffer = (Sint16*)stream;
+    int length = len / 2;
+    double frequency = *((double*)userdata);
+    
+    for(int i = 0; i < length; i++) {
+        buffer[i] = 32767 * sin(phase);
+        phase += 2 * M_PI * frequency / AUDIO_FREQUENCY;
+        if(phase > 2 * M_PI) {
+            phase -= 2 * M_PI;
+        }
+    }
+}
+
+// Function to play beep sound
+void PlayBeep(double frequency) {
+    SDL_AudioSpec want, have;
+    SDL_AudioDeviceID dev;
+
+    SDL_zero(want);
+    want.freq = AUDIO_FREQUENCY;
+    want.format = AUDIO_FORMAT;
+    want.channels = AUDIO_CHANNELS;
+    want.samples = AUDIO_SAMPLES;
+    want.callback = AudioCallback;
+    want.userdata = &frequency;
+
+    dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+    if (dev == 0) {
+        fprintf(stderr, "Failed to open audio: %s\n", SDL_GetError());
+        return;
+    }
+
+    SDL_PauseAudioDevice(dev, 0);
+    SDL_Delay(100);
+    SDL_CloseAudioDevice(dev);
 }
