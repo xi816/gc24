@@ -38,6 +38,7 @@ struct GC24 {
   SDL_Renderer* renderer;
 };
 typedef struct GC24 GC;
+void PlayBeep(double frequency);
 
 U0 InitGC(GC* gc) {
   gc->mem = (U8*)malloc(MEMSIZE);
