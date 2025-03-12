@@ -150,7 +150,7 @@ bad_command: bytes "Bad command.$^@"
 
 help_msg:    bytes "GovnOS help page 1/1$"
              bytes "  help        Show help$"
-             bytes "  echo        Echo text back to output$^@"
+             bytes "  echo        Echo text back to output$"
              bytes "  exit        Exit from the shell$^@"
 
 com_hi:      bytes "hi^@"
