@@ -46,6 +46,27 @@ strcmp:
   mov %ax $01
   ret
 
+pstrcmp:
+  lodb %si %ax
+  lodb %gi %bx
+  cmp %ax %bx
+  jne .fail
+  cmp %ax %cx
+  je .eq
+  jmp pstrcmp
+.eq:
+  mov %ax $00
+  ret
+.fail:
+  mov %ax $01
+  ret
+
+strtok:
+  lodb %si %ax
+  cmp %ax %cx
+  re
+  jmp strtok
+
 strnul:
   lodb %si %ax
   cmp %ax $00
@@ -82,6 +103,13 @@ shell:
   je govnos_hi
 
   mov %si command
+  mov %gi com_echo
+  mov %cx ' '
+  call pstrcmp
+  cmp %ax $00
+  je govnos_echo
+
+  mov %si command
   mov %gi com_exit
   call strcmp
   cmp %ax $00
@@ -108,16 +136,26 @@ govnos_help:
 govnos_exit:
   hlt
   jmp shell.aftexec
+govnos_echo:
+  mov %si command
+  mov %cx ' '
+  call strtok
+  int $81
+  push $0A
+  int 2
+  jmp shell.aftexec
 
 welcome_msg: bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
 bad_command: bytes "Bad command.$^@"
 
 help_msg:    bytes "GovnOS help page 1/1$"
              bytes "  help        Show help$"
+             bytes "  echo        Echo text back to output$^@"
              bytes "  exit        Exit from the shell$^@"
 
 com_hi:      bytes "hi^@"
 com_help:    bytes "help^@"
+com_echo:    bytes "echo "
 com_exit:    bytes "exit^@"
 hai_world:   bytes "hai world :3$^@"
 
