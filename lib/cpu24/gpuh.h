@@ -8,7 +8,7 @@
 #define VGASIZE WINW*WINH // 307,200
 
 #define gravno_start \
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO); \
+  SDL_Init(SDL_INIT_EVERYTHING); \
   SDL_Window* WIN = SDL_CreateWindow( \
       "Gravno Display", 500, 100, WINW, WINH, SDL_WINDOW_SHOWN); \
   SDL_Renderer* renderer = SDL_CreateRenderer( \
