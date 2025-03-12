@@ -5,11 +5,9 @@
 #define INT_DATE         0x03 // get date to dx register
 #define INT_RESET        0x04 // reset the CPU
 
-// Sound
-#define INT_BEEP        0x23 // generate beep with frequency from stack
-
 // Videobuffer
 #define INT_VIDEO_FLUSH  0x11 // flush the videobuffer
 #define INT_VIDEO_CLEAR  0x12 // clear the videobuffer
 #define INT_RAND         0x21 // get random number to dx
 #define INT_WAIT         0x22 // wait dx milliseconds
+#define INT_BEEP         0x23 // play beep sound with frequency from stack
