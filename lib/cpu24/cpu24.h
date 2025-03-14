@@ -96,7 +96,7 @@ U32 StackPop(GC* gc) {
 */
 gcrc_t ReadRegClust(U8 clust) {
   gcrc_t rc = {((clust&0b00111000)>>3), (clust&0b00000111)};
-  return rc;
+    return rc;
 }
 
 // The UNK function is ran when an illegal opcode is encountered
@@ -590,8 +590,6 @@ U8 POPr(GC* gc) {
 
 // B8           loop imm24
 U8 LOOPa(GC* gc) {
-  // printf("loop eshkere\n");
-  // printf("CX == $%06X\n", gc->reg[CX]);
   if (gc->reg[CX].word) {
     gc->reg[CX].word--;
     gc->PC = Read24(gc, gc->PC+1);
@@ -599,8 +597,6 @@ U8 LOOPa(GC* gc) {
   else {
     gc->PC += 4;
   }
-  // printf("teper PC == $%06X\n", gc->PC);
-  // getchar();
   return 0;
 }
 
@@ -629,6 +625,14 @@ U8 STDS(GC* gc) {
 U8 STDG(GC* gc) {
   gc->rom[gc->reg[GI].word] = gc->reg[gc->mem[gc->PC+1]].word;
   gc->PC++;
+  return 0;
+}
+
+// BF           pow rc
+U8 POWrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word = pow(gc->reg[rc.x].word, gc->reg[rc.y].word);
+  gc->PC += 2;
   return 0;
 }
 
@@ -717,7 +721,7 @@ U8 (*INSTS[256])() = {
   &DIVri, &DIVri, &DIVri, &DIVri, &DIVri, &DIVri, &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOWc, &LODWc,
   &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOHc, &LODHc,
   &JEa  , &JNEa , &JCa  , &JNCa , &JSa  , &JNa  , &JIa  , &JNIa , &RE   , &RNE  , &RC   , &RNC  , &RS   , &RN   , &RI   , &RNI  ,
-  &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &POPr , &UNK  , &LOOPa, &LDDS , &LDDG , &STDS , &STDG , &UNK  , &UNK  , &UNK  ,
+  &PUSHi, &UNK  , &UNK  , &UNK  , &UNK  , &PUSHr, &POPr , &UNK  , &LOOPa, &LDDS , &LDDG , &STDS , &STDG , &UNK  , &UNK  , &POWrc,
   &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &MOVri, &SUBrc, &MULrc, &DIVrc, &UNK  , &UNK  , &UNK  , &UNK  , &MOVrc,
   &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrb, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw, &MOVrw,
   &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVbr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr, &MOVwr,

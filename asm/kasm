@@ -40,7 +40,7 @@ KEY2   = [
   "jg", "jl", "lodb", "lodw", "lodh", "trap", "call", "ret",
   "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push",
   "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop",
-  "ldds", "lddg", "stds", "stdg", "sti", "iret"
+  "ldds", "lddg", "stds", "stdg", "sti", "iret", "pow"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -340,6 +340,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "RI", None, pos + 1, pc + 1)                      if (b == "ri") else
    (ASTINS, "RNI", None, pos + 1, pc + 1)                     if (b == "rni") else
    (ASTINS, "PUSHi", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "push") and (toks[pos+1][0] == T_INT)) else
+   (ASTINS, "PUSHl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "push") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "PUSHr", toks[pos+1][1], pos + 2, pc + 2)         if ((b == "push") and (toks[pos+1][0] == T_REG)) else
    (ASTINS, "LDDS", None, pos + 1, pc + 1)                    if (b == "ldds") else
    (ASTINS, "LDDG", None, pos + 1, pc + 1)                    if (b == "lddg") else
@@ -349,6 +350,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "IRET", None, pos + 2, pc + 1)                    if (b == "iret") else
    (ASTINS, "INXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "inx") and (toks[pos+1][0] == T_DREW)) else
    (ASTINS, "DEXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "dex") and (toks[pos+1][0] == T_DREW)) else
+   (ASTINS, "POWrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "pow") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (print("kasm: unknown instruction", toks[pos]) and exit(1))
   );
 
@@ -483,6 +485,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xAE,), pos+1)                                if (b[1] == "RI") else
    ((0xAF,), pos+1)                                if (b[1] == "RNI") else
    ((0xB0, *As24(b[2])), pos+1)                    if (b[1] == "PUSHi") else
+   ((0xB0, *As24(labels[b[2]])), pos+1)            if (b[1] == "PUSHl") else
    ((0xB5, b[2]), pos+1)                           if (b[1] == "PUSHr") else
    ((0x78, *As24(labels[b[2]])), pos+1)            if (b[1] == "CALLa") else
    ((0xB9,), pos+1)                                if (b[1] == "LDDS") else
@@ -493,6 +496,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0x04,), pos+1)                                if (b[1] == "IRET") else
    ((0x40, *As24(labels[b[2]])), pos+1)            if (b[1] == "INXwl") else
    ((0x42, *As24(labels[b[2]])), pos+1)            if (b[1] == "DEXwl") else
+   ((0xBF, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "POWrc") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 
