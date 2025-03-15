@@ -40,7 +40,8 @@ KEY2   = [
   "jg", "jl", "lodb", "lodw", "lodh", "trap", "call", "ret",
   "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push",
   "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop",
-  "ldds", "lddg", "stds", "stdg", "sti", "iret", "pow"
+  "ldds", "lddg", "stds", "stdg", "sti", "iret", "pow", "and",
+  "ora", "xor"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -299,6 +300,9 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "MULrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "mul") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "DIVri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "div") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "DIVrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "div") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "ANDrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "and") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "ORArc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "ora") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "XORrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "xor") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "JMPa", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jmp") and (toks[pos+1][0] == T_ID)) else
    (ASTINS, "JMP2", toks[pos+1][1], pos + 2, pc + 4)                    if ((b == "jmp") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "JEa", toks[pos+1][1], pos + 2, pc + 4)                     if ((b == "je") and (toks[pos+1][0] == T_ID)) else
@@ -439,6 +443,9 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0x00,), pos+1)                                if (b[1] == "HLT") else
    ((0x48+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "ADDri") else
    ((0x47, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "ADDrc") else
+   ((0x38, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "ANDrc") else
+   ((0x39, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "ORArc") else
+   ((0x3A, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "XORrc") else
    ((0x50+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "ADDrb") else
    ((0x58+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "ADDrw") else
    ((0x60+b[2][1], *As24(b[2][0])), pos+1)         if (b[1] == "ADDbr") else

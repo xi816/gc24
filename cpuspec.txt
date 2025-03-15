@@ -1,6 +1,7 @@
 Memory:
   $000000-$00FFFF      Shared general purpose memory
-  $400000-$404B00      VGA
+  $400000-$44B000      VGA
+  $700000-$7F0000      BIOS
   $FE0000-$FEFFFF      Stack
   $FF0000-$FFFFFF      Interrupt tables
 

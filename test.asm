@@ -1,7 +1,6 @@
 main:
   mov %ax 3
-  mov %bx 2
-  pow %ax %bx
+  mov %bx 5
+  ora %ax %bx
   trap
   hlt
-
