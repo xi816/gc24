@@ -19,6 +19,7 @@ GovnBIOS:
   mov %si puts
   sti $81
 
+  ; Draw the screen
   mov %si CLEARSCR
   int $81
   mov %si WELCOMEMSG
@@ -34,10 +35,14 @@ GovnBIOS:
 .loadGovnOS:
   mov %si CLEARSCR_BOOT
   int $81
-  jmp $030000
+  jmp $030000 ; Jump to the boot sector loaded
+              ; from the primary disk
 
+; ANSI MAGIC HAPPENS HERE
 CLEARSCR:      bytes "^[[44m^[[2J^[[H^@"
 CLEARSCR_BOOT: bytes "^[[0m^[[2J^[[H^@"
-WELCOMEMSG:    bytes "^[[47m^[[30mGovnBIOS 0.1 by Xi-816^[[K$^[[43m^[[K ^[[103mBoot^[[44m$^@"
-GOVNOSMSG:     bytes "^[[37mPress Enter to boot.$Well, choose GovnOS because you don't have any choice for now :)$^@"
+WELCOMEMSG:    bytes "^[[47m^[[30mGovnBIOS 0.1 by Xi-816^[[K$"
+               bytes "^[[43m^[[K ^[[103mBoot^[[44m$^@"
+GOVNOSMSG:     bytes "^[[37mPress Enter to boot.$"
+               bytes "Well, choose GovnOS because you don't have any choice for now :)$^@"
 biosBSE:       bytes $AA $55

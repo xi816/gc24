@@ -1,0 +1,12 @@
+draw	30004
+main	3001D
+main.l	30027
+main.left	30063
+main.right	3006B
+main.up	30073
+main.down	3007B
+render	30083
+render.end	3008B
+term	30091
+x	30092
+y	30094
