@@ -103,9 +103,9 @@ U8 main(I32 argc, I8** argv) {
     FILE* fl = fopen(filename, "rb");
     if (fl == NULL) {
       fprintf(stderr, "gc24: \033[91mfatal error:\033[0m file `%s` not found\n", filename);
+      old_st;
       free(gc.mem);
       free(gc.rom);
-      old_st;
       return 1;
     }
     fread(gc.mem+0x030000, 1, MEMSIZE, fl);
