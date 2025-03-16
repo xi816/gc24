@@ -83,9 +83,11 @@ U8 ExecD(GC* gc, U8 trapped) {
   }
   switch ((*tokens)[0]) {
   case 'q':
+    free(buf);
     if (trapped) exit(0);
     return 0;
   case 'R':
+    free(buf);
     return EXEC_START;
   case 'r':
     cli_DisplayReg(gc);
