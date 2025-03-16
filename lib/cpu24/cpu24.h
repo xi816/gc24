@@ -115,8 +115,8 @@ U8 HLT(GC* gc) {
 
 // 01           trap
 U8 TRAP(GC* gc) {
-  old_st_legacy;
-  ExecD(gc, 1);
+  // old_st_legacy;
+  // ExecD(gc, 1);
   gc->PC++;
   return 0;
 }
@@ -172,14 +172,16 @@ U8 DEXr(GC* gc) {
 
 // 30           inx #imm24
 U8 INXb(GC* gc) {
-  gc->mem[gc, gc->PC+1]++;
+  U32 addr = Read24(gc, gc->PC+1);
+  gc->mem[addr]++;
   gc->PC += 4;
   return 0;
 }
 
 // 32           dex #imm24
 U8 DEXb(GC* gc) {
-  gc->mem[gc, gc->PC+1]--;
+  U32 addr = Read24(gc, gc->PC+1);
+  gc->mem[addr]--;
   gc->PC += 4;
   return 0;
 }

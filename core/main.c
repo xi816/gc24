@@ -8,9 +8,10 @@
 #include <stdbool.h>
 #include <termios.h>
 
+#include <sterm-control.h>
+new_st;
 #include <holyc-types.h>
 #include <gc-types.h>
-#include <sterm-control.h>
 #include <cpu24/bpf.h>
 #include <cpu24/cli.h>
 #include <cpu24/cpu24.h>
@@ -45,8 +46,8 @@ U8 loadBootSector(U8* drive, U8* mem, U32 start, U32 to) {
 }
 
 U8 main(I32 argc, I8** argv) {
+  set_st;
   srand(time(NULL));
-  new_st;
   U8 driveboot;
   U8 climode = 0;
   U8 disasmmode = 0;
@@ -80,7 +81,7 @@ U8 main(I32 argc, I8** argv) {
       usage();
       exit(1);
     }
-    else if ((!strcmp(argv[argp], "disasm")) || (!strcmp(argv[argp], "-d")) || (!strcmp(argv[argp], "--disasm"))) {
+    else if ((!strcmp(argv[argp], "disasm")) || (!strcmp(argv[argp], "-D")) || (!strcmp(argv[argp], "--disasm"))) {
       disasmmode = 1;
       argp++;
     }

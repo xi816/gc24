@@ -604,6 +604,7 @@ def main(argc: int, argv: list) -> int:
     exit(tokens);
   ast, labs = Parse(tokens, progname, exportmode);
   labs = OffsetLabs(labs, offset);
+  PrintAst(ast);
   if (exportmode):
     ExportLabs(progname, labs, outname);
     exit(1);

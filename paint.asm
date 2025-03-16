@@ -19,7 +19,8 @@ main:
   int 1
   pop %ax
   push %ax
-  mov %dx $03
+  mov %si color
+  lodb %si %dx
   call draw
   pop %ax
   cmp %ax 'a'
@@ -30,6 +31,8 @@ main:
   je .up
   cmp %ax 's'
   je .down
+  cmp %ax 'x'
+  je .colorx
   cmp %ax 'c'
   je .colorc
   cmp %ax 'q'
@@ -47,6 +50,9 @@ main:
 .down:
   inx @y
   jmp render
+.colorx:
+  dex #color
+  jmp render.panel
 .colorc:
   inx #color
   jmp render.panel

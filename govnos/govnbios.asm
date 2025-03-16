@@ -39,10 +39,10 @@ GovnBIOS:
               ; from the primary disk
 
 ; ANSI MAGIC HAPPENS HERE
-CLEARSCR:      bytes "^[[44m^[[2J^[[H^@"
+CLEARSCR:      bytes "^[[48;5;19m^[[2J^[[H^@"
 CLEARSCR_BOOT: bytes "^[[0m^[[2J^[[H^@"
-WELCOMEMSG:    bytes "^[[47m^[[30mGovnBIOS 0.1 by Xi-816^[[K$"
-               bytes "^[[43m^[[K ^[[103mBoot^[[44m$^@"
-GOVNOSMSG:     bytes "^[[37mPress Enter to boot.$"
+WELCOMEMSG:    bytes "^[[48;5;252m^[[30mGovnBIOS 0.1 by Xi-816^[[K$"
+               bytes "^[[48;5;20m^[[K ^[[48;5;21m^[[38;5;252mBoot^[[48;5;19m$^@"
+GOVNOSMSG:     bytes "^[[38;5;252mPress Enter to boot.$"
                bytes "Well, choose GovnOS because you don't have any choice for now :)$^@"
 biosBSE:       bytes $AA $55
