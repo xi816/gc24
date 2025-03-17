@@ -115,8 +115,8 @@ U8 HLT(GC* gc) {
 
 // 01           trap
 U8 TRAP(GC* gc) {
-  // old_st_legacy;
-  // ExecD(gc, 1);
+  old_st_legacy;
+  ExecD(gc, 1);
   gc->PC++;
   return 0;
 }
