@@ -61,6 +61,23 @@ pstrcmp:
   mov %ax $01
   ret
 
+dmemcmp:
+  dex %cx
+  ldds
+  inx %si
+  lodb %gi %bx
+  cmp %ax %bx
+  jne .fail
+  cmp %cx $00
+  je .eq
+  jmp dmemcmp
+.eq:
+  mov %ax $00
+  ret
+.fail:
+  mov %ax $01
+  ret
+
 strtok:
   lodb %si %ax
   cmp %ax %cx
@@ -109,6 +126,56 @@ puti_clr:
   loop .loop
   ret
 puti_buf: reserve 8 bytes
+
+gfs2_read_file:
+  mov %dx $0001 ; Starting search at sector 1 (sector 0 is for header data)
+  mov %si $0200 ; Precomputed starting address (sector*512)
+.loop:
+  ldds          ; Read the first byte from a sector to get its type
+                ;   00 -- Empty sector
+                ;   01 -- File start
+                ;   02 -- File middle/end
+                ;   F7 -- Disk end
+  cmp %ax $01
+  je .flcheck   ; Check filename and tag
+  cmp %ax $F7
+  je .fail
+.flcheck:
+  inx %si       ; Get to the start of filename
+  mov %cx 15    ; Check 15 bytes
+  mov %gi com_predefined_file_header
+  call dmemcmp
+  cmp %ax $00
+  je flcpy
+  cmp %ax $00
+  re
+
+  inx %dx
+  mov %si %dx
+  mul %si $0200
+  jmp .loop
+.fail:
+  mov %ax $01
+  ret
+
+flcpy: ; %dx should already contain file's start sector
+  mov %gi $200000
+.read:
+  cmp %dx $0000
+  je .end
+  mov %si %dx
+  mul %si $0200
+  add %si 16  ; Skip the processed header
+  mov %cx 494 ; Copy 494 bytes (sectorSize(512) - sectorHeader(16) - sectorFooter(2))
+  dex %cx
+.loop:
+  ldds
+  inx %si
+  stob %gi %ax
+  loop .loop
+.end:
+  mov %ax $00
+  ret
 
 boot:
   mov %si welcome_msg
@@ -160,6 +227,15 @@ shell:
   cmp %ax $00
   je govnos_gsfetch
 
+  mov %si com_predefined_file_header
+  call gfs2_read_file
+  cmp %ax $00
+  je .call
+  jmp .bad
+.call:
+  call $200000
+  jmp .aftexec
+.bad:
   mov %si bad_command
   int $81
 .aftexec:
@@ -249,6 +325,9 @@ gsfc_logo:   bytes "^[[6A^[[33m  .     . .$"
 env_HOST:    bytes "GovnPC 24 Super Edition^@"
 env_OS:      bytes "GovnOS 0.1.0 For GovnoCore24^@"
 env_CPU:     bytes "Govno Core 24$^@"
+
+; TODO: unhardcode file header
+com_predefined_file_header: bytes "file.bin^@^@^@^@com"
 
 command:     reserve 64 bytes
 clen:        reserve 2 bytes

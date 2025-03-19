@@ -329,6 +329,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "DEXb",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "dex") and (toks[pos+1][0] == T_ADDRB)) else
    (ASTINS, "DEXw",  toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "dex") and (toks[pos+1][0] == T_ADDRW)) else
    (ASTINS, "CALLa", toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "call") and (toks[pos+1][0] == T_ID)) else
+   (ASTINS, "CALL2", toks[pos+1][1], pos + 2, pc + 4)                   if ((b == "call") and (toks[pos+1][0] == T_INT)) else
    (ASTINS, "CMPri", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 4) if ((b == "cmp") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "LODBc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodb") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
    (ASTINS, "LODWc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "lodw") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
@@ -503,6 +504,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0xB0, *As24(labels[b[2]])), pos+1)            if (b[1] == "PUSHl") else
    ((0xB5, b[2]), pos+1)                           if (b[1] == "PUSHr") else
    ((0x78, *As24(labels[b[2]])), pos+1)            if (b[1] == "CALLa") else
+   ((0x78, *As24(b[2])), pos+1)                    if (b[1] == "CALL2") else
    ((0xB9,), pos+1)                                if (b[1] == "LDDS") else
    ((0xBA,), pos+1)                                if (b[1] == "LDDG") else
    ((0xBB,), pos+1)                                if (b[1] == "STDS") else
