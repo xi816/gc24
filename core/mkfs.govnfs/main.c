@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
   printf("mkfs.govnfs: erasing the header (%d bytes ROM)\n", drvlen);
   memcpy(drvbuf, HEADER, 32);
   memset(drvbuf+HEADER_SIZE, 0x00, drvlen-HEADER_SIZE);
+  drvbuf[0x000200] = 0xF7; // Set first file header byte to $F7, meaning there's no files
   fwrite(drvbuf, 1, drvlen, drv);
   fclose(drv);
   return 0;

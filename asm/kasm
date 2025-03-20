@@ -572,10 +572,10 @@ def main(argc: int, argv: list) -> int:
   offset = 0x030000;
   while (argp < argc):
     match (argv[argp]):
-      case "-export":
+      case "-e":
         exportmode = 1;
         argp += 1;
-      case "-import":
+      case "-i":
         imp_files.append(argv[argp+1]);
         argp += 2;
       case "-o":
@@ -584,7 +584,7 @@ def main(argc: int, argv: list) -> int:
       case "-d":
         diskmode = True;
         argp += 1;
-      case "-i":
+      case "-I":
         IKasm();
         argp += 1;
         break;

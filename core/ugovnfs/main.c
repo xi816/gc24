@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,6 +32,12 @@ uint16_t firstFileSector(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
   return 0;
 }
 
+uint16_t firstEmptySector(uint8_t* disk) {
+  uint16_t sector = 0x0001;
+  while ((disk[sector*512] != 0x00) && (disk[sector*512] != 0xF7)) sector++;
+  return sector;
+}
+
 uint16_t nextLink(uint8_t* disk, uint16_t sector) {
   return (((disk[sector*512+0xFF])<<8) + (disk[sector*512+0xFE]));
 }
@@ -42,7 +49,32 @@ uint8_t getFileSize(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
   return filesize;
 }
 
-uint8_t readFile(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
+uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t* g_tag) {
+  FILE* fl = fopen(filename, "rb");
+  if (fl == NULL) {
+    printf("ugovnfs: \033[91mfatal error:\033[0m file `%s` not found\n", filename);
+    return 1;
+  }
+  fseek(fl, 0, SEEK_END);
+  uint32_t flsize = ftell(fl);
+  uint8_t file[494];
+  fseek(fl, 0, SEEK_SET);
+  fread(file, 1, 494, fl);
+  fclose(fl);
+  if (flsize > 494) {
+    printf("Right now ugovnfs can't handle files more than 494 bytes, sorry");
+    exit(1);
+  }
+  uint16_t emptySector = firstEmptySector(disk);
+  printf("empty sector\t%04X\n", emptySector);
+  printf("filename\t%.11s\n", g_filename);
+  printf("tag\t\t%.3s\n", g_tag);
+  printf("addr\t\t%06X\n", emptySector*512);
+  disk[emptySector*512] = 0x01;
+  strcpy(disk+emptySector*512+1, g_filename);
+  memcpy(disk+emptySector*512+13, g_tag, 3);
+  memcpy(disk+emptySector*512+16, file, 494);
+  return 0;
 }
 
 // The header is the first 32 bytes of the disk
@@ -68,7 +100,7 @@ int main(int argc, char** argv) {
     puts("ugovnfs: no disk/flag given");
     return 1;
   }
-  FILE* fl = fopen(argv[2], "rb");
+  FILE* fl = fopen(argv[2], "rb+");
   if (fl == NULL) {
     printf("ugovnfs: \033[91mfatal error:\033[0m file `%s` not found\n", argv[1]);
     return 1;
@@ -78,7 +110,7 @@ int main(int argc, char** argv) {
   uint8_t* disk = malloc(flsize);
   fseek(fl, 0, SEEK_SET);
   fread(disk, 1, flsize, fl);
-  fclose(fl);
+  fseek(fl, 0, SEEK_SET);
 
   // Check the disk
   if (disk[0x000000] != 0x42) {
@@ -87,22 +119,33 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  uint8_t ugovnfs_errno = 0xFF;
   if (!strcmp(argv[1], "-i")) {
-    return readHeader(disk);
+    ugovnfs_errno = readHeader(disk);
   }
   else if (!strcmp(argv[1], "-l")) {
-    return readFilenames(disk, disk[0x10]);
+    ugovnfs_errno = readFilenames(disk, disk[0x10]);
+  }
+  else if (!strcmp(argv[1], "-c")) {
+    // ugovnfs -c disk.img file.bin "file"   "com"
+    ugovnfs_errno = writeFile(disk, argv[3], argv[4], argv[5]);
+    fwrite(disk, 1, flsize, fl);
+    printf("Disk written successfully\n");
   }
   else if (!strcmp(argv[1], "-s")) {
     uint16_t fs = firstFileSector(disk, argv[3], argv[4]);
     printf("The file #/%s/%s starts at #%06X\n", argv[3], argv[4], fs*512);
-    return 0;
+    ugovnfs_errno = 0;
   }
   else {
     printf("ugovnfs: \033[91mfatal error:\033[0m unknown argument: `%s`\n", argv[1]);
-    free(disk);
-    return 1;
+    ugovnfs_errno = 1;
   }
-  puts("ugovnfs: no arguments given");
+  fclose(fl);
+  free(disk);
+  if (ugovnfs_errno == 0xFF) {
+    puts("ugovnfs: no arguments given");
+    return 0;
+  }
   return 0;
 }

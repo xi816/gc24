@@ -25,10 +25,10 @@ int32_t main(int argc, char** argv) {
 
   // Compile GovnOS
   // printf("Compiling GovnOS...\n");
-  system("./kasm -o 700000 -export govnos/govnbios.asm govnos/govnbios.exp");
+  system("./kasm -o 700000 -e govnos/govnbios.asm govnos/govnbios.exp");
   system("./kasm -o 700000 govnos/govnbios.asm bios.img");
 
-  system("./kasm -import govnos/govnbios.exp govnos/boot.asm govnos/boot.bin");
+  system("./kasm -i govnos/govnbios.exp govnos/boot.asm govnos/boot.bin");
 
   // Load GovnOS
   printf("Loading GovnOS into %s%s%s... ", color, argv[1], rcolor); fflush(stdout);
