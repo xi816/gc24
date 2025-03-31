@@ -229,6 +229,7 @@ U8 INT(GC* gc) {
     Reset(gc);
     return 0;
   case INT_VIDEO_FLUSH:
+    printf("hiiii im the GGpage and im not working FIXME\n");
     GGpage(gc);
     break;
   case INT_VIDEO_CLEAR:

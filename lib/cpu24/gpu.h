@@ -55,7 +55,7 @@ U0 GGflush(GC* gc) {
   SDL_RenderPresent(gc->renderer);
 }
 
-U0 GGpage(GC* gc) {
+U0 GGpage_CGA16(GC* gc) {
   U8 byte;
   for (U32 i = 0; i < VGASIZE; i++) {
     byte = gc->mem[0x400000+i];
@@ -64,4 +64,30 @@ U0 GGpage(GC* gc) {
     SDL_RenderDrawPoint(gc->renderer, (i+1)%WINW, (i+1)/WINW);
   }
   SDL_RenderPresent(gc->renderer);
+}
+
+U0 GGpage_RGB555LE(GC* gc) {
+  printf("OMG IT's THE RGB555LE!\n");
+  for (U32 i = 0x4A0000; i < 0x4A0010; i++) {
+    printf("%02X ", gc->mem[i]);
+  }
+  puts("\b");
+  U8 byte;
+  for (U32 i = 0; i < VGASIZE; i++) {
+    byte = (gc->mem[0x400000+i]) + (gc->mem[0x400001+i] << 8);
+    SDL_SetRenderDrawColor(gc->renderer,
+      (((0x4A00000+byte*2)&0b0111110000000000)>>10), // R
+      (((0x4A00000+byte*2)&0b0000001111100000)>>5),  // G
+      (((0x4A00000+byte*2)&0b0000000000011111)),     // B
+      0xFF);
+    SDL_RenderDrawPoint(gc->renderer, i%WINW, i/WINW);
+    SDL_RenderDrawPoint(gc->renderer, (i+1)%WINW, (i+1)/WINW);
+  }
+  SDL_RenderPresent(gc->renderer);
+}
+
+U0 (*GGPAGE[2])(GC*) = {&GGpage_CGA16, &GGpage_RGB555LE};
+U0 GGpage(GC* gc) {
+  printf("yeah its %02X\n", gc->mem[0x49FF00]);
+  GGPAGE[gc->mem[0x49FF00]%2](gc);
 }

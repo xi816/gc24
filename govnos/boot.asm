@@ -94,6 +94,14 @@ strnul:
   mov %ax $00
   ret
 
+memcpy:
+  dex %cx
+.loop:
+  lodb %si %ax
+  stob %gi %ax
+  loop .loop
+  ret
+
 write:
   dex %cx
 .loop:
@@ -227,7 +235,19 @@ shell:
   cmp %ax $00
   je govnos_gsfetch
 
-  mov %si com_predefined_file_header
+  mov %si command
+  mov %gi file_header
+  inx %gi
+  mov %cx 11
+  call memcpy
+  mov %si file_tag
+  mov %gi file_header
+  add %gi 13
+  mov %cx 3
+  call memcpy
+
+  mov %si file_header
+  trap
   call gfs2_read_file
   cmp %ax $00
   je .call
@@ -328,6 +348,8 @@ env_CPU:     bytes "Govno Core 24$^@"
 
 ; TODO: unhardcode file header
 com_predefined_file_header: bytes "file.bin^@^@^@^@com"
+file_header:                reserve 16 bytes
+file_tag:                   bytes "com^@"
 
 command:     reserve 64 bytes
 clen:        reserve 2 bytes
