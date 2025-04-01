@@ -229,7 +229,6 @@ U8 INT(GC* gc) {
     Reset(gc);
     return 0;
   case INT_VIDEO_FLUSH:
-    printf("hiiii im the GGpage and im not working FIXME\n");
     GGpage(gc);
     break;
   case INT_VIDEO_CLEAR:
@@ -829,7 +828,10 @@ U8 Exec(GC* gc, const U32 memsize) {
   execloop:
     exc = (INSTS[gc->mem[gc->PC]])(gc);
     insts++;
-    if (exc != 0) { printf("gc24: executed %d instructions\n", insts); return gc_errno; }
+    if (exc != 0) {
+      printf("gc24: executed 1E%.10lf instructions\n", log10(insts));
+      return gc_errno;
+    }
     goto execloop;
   return exc;
 }
