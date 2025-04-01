@@ -828,7 +828,6 @@ U8 Exec(GC* gc, const U32 memsize) {
   execloop:
     exc = (INSTS[gc->mem[gc->PC]])(gc);
     insts++;
-    usleep(1000);
     if (exc != 0) {
       printf("gc24: executed 1E%.10lf instructions\n", log10(insts));
       return gc_errno;
