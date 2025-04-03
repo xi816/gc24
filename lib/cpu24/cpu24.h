@@ -186,20 +186,50 @@ U8 DEXb(GC* gc) {
   return 0;
 }
 
+// 37           cmp rc
+U8 CMPrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  I16 val0 = gc->reg[rc.x].word;
+  I16 val1 = gc->reg[rc.y].word;
+
+  if (!(val0 - val1))    SET_ZF(gc->PS);
+  else                   RESET_ZF(gc->PS);
+  if ((val0 - val1) < 0) SET_NF(gc->PS);
+  else                   RESET_NF(gc->PS);
+
+  gc->PC += 2;
+  return 0;
+}
+
+// 38           and rc
+U8 ANDrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word &= gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
+// 39           ora rc
+U8 ORArc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word |= gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
+// 3A           xor rc
+U8 XORrc(GC* gc) {
+  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
+  gc->reg[rc.x].word ^= gc->reg[rc.y].word;
+  gc->PC += 2;
+  return 0;
+}
+
 // 40           inx @imm24
 U8 INXw(GC* gc) {
   U32 addr = Read24(gc, gc->PC+1);
   U16 a = ReadWord(gc, addr);
   WriteWord(gc, addr, a+1);
-  gc->PC += 4;
-  return 0;
-}
-
-// 42           dex @imm24
-U8 DEXw(GC* gc) {
-  U32 addr = Read24(gc, gc->PC+1);
-  U16 a = ReadWord(gc, addr);
-  WriteWord(gc, addr, a-1);
   gc->PC += 4;
   return 0;
 }
@@ -255,42 +285,12 @@ U8 INT(GC* gc) {
   return 0;
 }
 
-// 37           cmp rc
-U8 CMPrc(GC* gc) {
-  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
-  I16 val0 = gc->reg[rc.x].word;
-  I16 val1 = gc->reg[rc.y].word;
-
-  if (!(val0 - val1))    SET_ZF(gc->PS);
-  else                   RESET_ZF(gc->PS);
-  if ((val0 - val1) < 0) SET_NF(gc->PS);
-  else                   RESET_NF(gc->PS);
-
-  gc->PC += 2;
-  return 0;
-}
-
-// 38           and rc
-U8 ANDrc(GC* gc) {
-  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
-  gc->reg[rc.x].word &= gc->reg[rc.y].word;
-  gc->PC += 2;
-  return 0;
-}
-
-// 39           ora rc
-U8 ORArc(GC* gc) {
-  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
-  gc->reg[rc.x].word |= gc->reg[rc.y].word;
-  gc->PC += 2;
-  return 0;
-}
-
-// 3A           xor rc
-U8 XORrc(GC* gc) {
-  gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
-  gc->reg[rc.x].word ^= gc->reg[rc.y].word;
-  gc->PC += 2;
+// 42           dex @imm24
+U8 DEXw(GC* gc) {
+  U32 addr = Read24(gc, gc->PC+1);
+  U16 a = ReadWord(gc, addr);
+  WriteWord(gc, addr, a-1);
+  gc->PC += 4;
   return 0;
 }
 
@@ -643,14 +643,14 @@ U8 LDDG(GC* gc) {
 // BB           stds
 U8 STDS(GC* gc) {
   gc->rom[gc->reg[SI].word] = gc->reg[gc->mem[gc->PC+1]].word;
-  gc->PC++;
+  gc->PC += 2;
   return 0;
 }
 
 // BC           stdg
 U8 STDG(GC* gc) {
   gc->rom[gc->reg[GI].word] = gc->reg[gc->mem[gc->PC+1]].word;
-  gc->PC++;
+  gc->PC += 2;
   return 0;
 }
 
