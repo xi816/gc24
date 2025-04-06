@@ -261,6 +261,12 @@ shell:
   je govnos_exit
 
   mov %si command
+  mov %gi com_cls
+  call strcmp
+  cmp %ax $00
+  je govnos_cls
+
+  mov %si command
   mov %gi com_calc
   call strcmp
   cmp %ax $00
@@ -305,6 +311,10 @@ shell:
   jmp .prompt
 govnos_hi:
   mov %si hai_world
+  int $81
+  jmp shell.aftexec
+govnos_cls:
+  mov %si cls_seq
   int $81
   jmp shell.aftexec
 govnos_gsfetch:
@@ -436,6 +446,7 @@ help_msg:    bytes "GovnOS help page 1/1$"
              bytes "  exit        Exit from the shell$^@"
 
 com_hi:      bytes "hi^@"
+com_cls:     bytes "cls^@"
 com_calc:    bytes "calc^@"
 com_gsfetch: bytes "gsfetch^@"
 com_help:    bytes "help^@"
@@ -474,6 +485,7 @@ command:     reserve 64 bytes
 clen:        reserve 2 bytes
 
 bs_seq:      bytes "^H ^H^@"
+cls_seq:     bytes "^[[H^[[2J^@"
 env_PS:      bytes "# ^@"
 
 bse:         bytes $AA $55

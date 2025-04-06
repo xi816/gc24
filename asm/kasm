@@ -605,9 +605,7 @@ def main(argc: int, argv: list) -> int:
     print("Fatal error. Can't compile");
     exit(tokens);
   ast, labs = Parse(tokens, progname, exportmode);
-  PrintAst(ast);
   labs = OffsetLabs(labs, offset);
-  PrintLabs(labs);
   if (exportmode):
     ExportLabs(progname, labs, outname);
     exit(1);
