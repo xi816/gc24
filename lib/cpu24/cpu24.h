@@ -821,7 +821,7 @@ U0 RegDump(GC* gc) {
   printf("   -I---ZNC\033[0m\n");
 }
 
-U8 Exec(GC* gc, const U32 memsize) {
+U8 Exec(GC* gc, const U32 memsize, U8 verbosemode) {
   U8 exc = 0;
   U8 step = 0;
   U32 insts = 0;
@@ -830,6 +830,8 @@ U8 Exec(GC* gc, const U32 memsize) {
     insts++;
     if (exc != 0) {
       printf("gc24: executed 1E%.10lf instructions\n", log10(insts));
+      printf(verbosemode ? "last executed instruction: \033[32m$%02X\033[0m\n" : "", gc->mem[gc->PC]);
+      printf(verbosemode ? "last executed address: \033[33m#%06X\033[0m\n" : "", gc->PC);
       return gc_errno;
     }
     goto execloop;

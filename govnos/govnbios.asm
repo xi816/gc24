@@ -5,6 +5,7 @@
 ; This is just a test, don't expect it to run with no bugs
 
 GovnBIOSReset: jmp GovnBIOS
+; Interrupt $81 -- Output a string
 puts:
   lodb %si %ax
   cmp %ax $00

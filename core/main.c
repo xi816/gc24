@@ -51,6 +51,7 @@ U8 main(I32 argc, I8** argv) {
   U8 driveboot;
   U8 climode = 0;
   U8 disasmmode = 0;
+  U8 verbosemode = 0;
   U8 argp = 1; // 256 arguments is enough for everyone
   U8* filename = NULL;
   U8* biosfile = NULL;
@@ -71,6 +72,10 @@ U8 main(I32 argc, I8** argv) {
     else if ((!strcmp(argv[argp], "bios")) || (!strcmp(argv[argp], "-b")) || (!strcmp(argv[argp], "--bios"))) {
       biosfile = argv[argp+1];
       argp += 2;
+    }
+    else if ((!strcmp(argv[argp], "verbose")) || (!strcmp(argv[argp], "-v")) || (!strcmp(argv[argp], "--verbose"))) {
+      verbosemode = 1;
+      argp++;
     }
     else if ((!strcmp(argv[argp], "cli")) || (!strcmp(argv[argp], "-c")) || (!strcmp(argv[argp], "--cli"))) {
       climode = 1;
@@ -162,7 +167,7 @@ U8 main(I32 argc, I8** argv) {
     return 0;
   }
   tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  U8 exec_errno = Exec(&gc, MEMSIZE);
+  U8 exec_errno = Exec(&gc, MEMSIZE, verbosemode);
   gravno_end;
   old_st;
   if (driveboot) { // Save the modified disk back

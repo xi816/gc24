@@ -103,12 +103,14 @@ memcpy:
   ret
 
 write:
+  push %ax
   dex %cx
 .loop:
   lodb %si %ax
   push %ax
   int $02
   loop .loop
+  pop %ax
   ret
 puti:
   mov %gi puti_buf
@@ -128,12 +130,47 @@ puti:
 puti_clr:
   mov %si puti_buf
   mov %ax $00
-  mov %cx 8
+  mov %cx 7 ; 8
 .loop:
   stob %si %ax
   loop .loop
   ret
 puti_buf: reserve 8 bytes
+
+scani:
+  mov %ax $00
+.loop:
+  int $01
+  pop %bx
+
+  cmp %bx $0A ; Check for Enter
+  re
+  cmp %bx $20 ; Check for space
+  re
+  cmp %bx $7F ; Check for Backspace
+  je .back
+  cmp %bx $30 ; Check if less than '0'
+  jl .loop
+  cmp %bx $3A ; Check if greater than '9'+1
+  jg .loop
+
+  mul %ax 10
+  push %bx
+  int $02
+  sub %bx 48
+  add %ax %bx
+  jmp .loop
+.back: ; Backspace handler
+  cmp %ax 0
+  jne .back_strict
+  jmp .loop
+.back_strict:
+  mov %si bs_seq
+  push %ax
+  int $81
+  pop %ax
+  div %ax 10
+  jmp .loop
 
 gfs2_read_file:
   mov %dx $0001 ; Starting search at sector 1 (sector 0 is for header data)
@@ -222,6 +259,12 @@ shell:
   call strcmp
   cmp %ax $00
   je govnos_exit
+
+  mov %si command
+  mov %gi com_calc
+  call strcmp
+  cmp %ax $00
+  je govnos_calc
 
   mov %si command
   mov %gi com_help
@@ -313,6 +356,75 @@ govnos_echo:
   push $0A
   int 2
   jmp shell.aftexec
+govnos_calc:
+  ; First number
+  mov %si calc_00
+  int $81
+  call scani
+
+  ; Second number
+  mov %si calc_01
+  push %ax
+  int $81
+  call scani
+  mov %bx %ax
+  pop %ax
+
+  ; Operation
+  mov %si calc_02
+  push %ax
+  int $81
+  pop %ax
+  int $01
+  pop %cx
+  push %cx
+  int $02
+  push '$'
+  int 2
+
+  cmp %cx '+'
+  je .add
+  cmp %cx '-'
+  je .sub
+  cmp %cx '*'
+  je .mul
+  cmp %cx '/'
+  je .div
+  jmp .unk
+.add:
+  add %ax %bx
+  call puti
+  push '$'
+  int $02
+  jmp shell.aftexec
+.sub:
+  sub %ax %bx
+  call puti
+  push '$'
+  int $02
+  jmp shell.aftexec
+.mul:
+  mul %ax %bx
+  call puti
+  push '$'
+  int $02
+  jmp shell.aftexec
+.div:
+  cmp %bx $00
+  je .div_panic
+  div %ax %bx
+  call puti
+  push '$'
+  int $02
+  jmp shell.aftexec
+.div_panic:
+  mov %si calc_04
+  int $81
+  jmp shell.aftexec
+.unk:
+  mov %si calc_03
+  int $81
+  jmp shell.aftexec
 
 welcome_msg: bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
 bad_command: bytes "Bad command.$^@"
@@ -324,11 +436,18 @@ help_msg:    bytes "GovnOS help page 1/1$"
              bytes "  exit        Exit from the shell$^@"
 
 com_hi:      bytes "hi^@"
+com_calc:    bytes "calc^@"
 com_gsfetch: bytes "gsfetch^@"
 com_help:    bytes "help^@"
 com_echo:    bytes "echo "
 com_exit:    bytes "exit^@"
 hai_world:   bytes "hai world :3$^@"
+
+calc_00:     bytes "Enter first number: ^@"
+calc_01:     bytes "$Enter second number: ^@"
+calc_02:     bytes "$Enter operation [+-*/]: ^@"
+calc_03:     bytes "Unknown operation. Make sure you typed +, -, *, /$^@"
+calc_04:     bytes "Division by 0 has been blocked by Pythagoras$^@"
 
 gsfc_000:    bytes "             ^[[97mgsfetch$^[[0m             ---------$^@"
 gsfc_001:    bytes "             ^[[97mHost: ^[[0m^@"
