@@ -135,6 +135,12 @@ U8 IRET(GC* gc) {
   return 0;
 }
 
+// 05           nop
+U8 NOP(GC* gc) {
+  gc->PC++;
+  return 0;
+}
+
 // 08-0F        mul reg imm24
 U8 MULri(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0x08) % 8].word *= Read24(gc, gc->PC+1);
@@ -709,7 +715,7 @@ U8 MOVrb(GC* gc) {
   return 0;
 }
 
-// D8-E0        mov reg word[imm24]
+// D8-DF        mov reg word[imm24]
 U8 MOVrw(GC* gc) {
   gc->reg[(gc->mem[gc->PC]-0xD8) % 8].word = ReadWord(gc, Read24(gc, gc->PC+1));
   gc->PC += 4;
@@ -736,7 +742,7 @@ U8 PG0F(GC*); // Page 0F - Additional instructions page
 
 // Zero page instructions
 U8 (*INSTS[256])() = {
-  &HLT  , &TRAP , &UNK  , &STI  , &IRET , &UNK  , &UNK  , &UNK  , &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri,
+  &HLT  , &TRAP , &UNK  , &STI  , &IRET , &NOP  , &UNK  , &UNK  , &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri, &MULri,
   &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBri, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb, &SUBrb,
   &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &INXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr , &DEXr ,
   &INXb , &UNK  , &DEXb , &UNK  , &UNK  , &UNK  , &UNK  , &CMPrc, &ANDrc, &ORArc, &XORrc, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  ,

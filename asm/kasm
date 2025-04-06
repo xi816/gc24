@@ -364,6 +364,7 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "INXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "inx") and (toks[pos+1][0] == T_DREW)) else
    (ASTINS, "DEXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "dex") and (toks[pos+1][0] == T_DREW)) else
    (ASTINS, "POWrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "pow") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "NOP", (), pos + 1, pc + 1)                      if ((b == "nop")) else
    (print("kasm: unknown instruction", toks[pos]) and exit(1))
   );
 
@@ -450,6 +451,7 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0x41, b[2]), pos+1)                           if (b[1] == "INT8") else
    ((0xB6, b[2]), pos+1)                           if (b[1] == "POPr") else
    ((0x00,), pos+1)                                if (b[1] == "HLT") else
+   ((0x05,), pos+1)                                if (b[1] == "NOP") else
    ((0x48+b[2][0], *As24(b[2][1])), pos+1)         if (b[1] == "ADDri") else
    ((0x47, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "ADDrc") else
    ((0x38, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "ANDrc") else
