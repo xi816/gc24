@@ -68,6 +68,7 @@ dmemcmp:
   inx %si
   lodb %gi %bx
   cmp %ax %bx
+  ; trap
   jne .fail
   loop .loop
 .eq:
@@ -190,29 +191,37 @@ gfs2_read_file:
                 ;   F7 -- Disk end
   cmp %ax $01
   je .flcheck   ; Check filename and tag
+  cmp %ax $00
+  je .skip      ; Skip
   cmp %ax $F7
   je .fail
 .flcheck:
   inx %si       ; Get to the start of filename
   mov %cx 15    ; Check 15 bytes
-  mov %gi file_header
-  inx %gi
+  push %gi
+  push %bx
+  mov %gi %bx
+  ; inx %gi
   call dmemcmp
+  pop %bx
+  pop %gi
   cmp %ax $00
   je flcpy
-  cmp %ax $00
-  re
+  ; this code is unreachable if %ax == $00
 
   inx %dx
   mov %si %dx
   mul %si $0200
+  jmp .loop
+.skip:
+  add %si $0200
   jmp .loop
 .fail:
   mov %ax $01
   ret
 
 flcpy: ; %dx should already contain file's start sector
-  mov %gi $200000
+  ; mov %gi $200000 ; should be configured by the caller
 .read:
   cmp %dx $0000
   je .end
@@ -225,14 +234,25 @@ flcpy: ; %dx should already contain file's start sector
   ldds
   inx %si
   stob %gi %ax
+  ; trap
   loop .loop
 .end:
   mov %ax $00
   ret
 
 boot:
+  ; Load the kernel libraries
   mov %si welcome_msg
   int $81
+  mov %si krnl_load_msg
+  int $81
+
+  mov %bx krnl_file_header
+  mov %gi $A00000
+  call gfs2_read_file
+  cmp %ax $00
+  jne shell
+  call $A00000
 shell:
 .prompt:
   mov %si env_PS
@@ -306,7 +326,7 @@ shell:
   mov %cx 3
   call memcpy
 
-  mov %si file_header
+  mov %bx file_header
   call gfs2_read_file
   cmp %ax $00
   je .call
@@ -446,8 +466,9 @@ govnos_calc:
   int $81
   jmp shell.aftexec
 
-welcome_msg: bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
-bad_command: bytes "Bad command.$^@"
+welcome_msg:   bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
+krnl_load_msg: bytes "Loading ^[[92m:/krnl.bin/com^[[0m...$^@"
+bad_command:   bytes "Bad command.$^@"
 
 help_msg:    bytes "GovnOS help page 1/1$"
              bytes "  gsfetch     Shot system info$"
@@ -486,8 +507,9 @@ env_HOST:    bytes "GovnPC 24 Super Edition^@"
 env_OS:      bytes "GovnOS 0.1.0 For GovnoCore24^@"
 env_CPU:     bytes "Govno Core 24$^@"
 
-; TODO: unhardcode file header
-com_predefined_file_header: bytes "file.bin^@^@^@^@com"
+; TODO: unhardcode file header TODO: remove this todo
+com_predefined_file_header: bytes "file.bin^@^@^@^@com^@"
+krnl_file_header:           bytes "krnl.bin^@^@^@^@com^@"
 file_header:                reserve 16 bytes
 file_tag:                   bytes "com^@"
 
