@@ -10,7 +10,7 @@
 #define MEMSIZE 16777216
 
 union gcreg {
-  uint32_t word: 24;
+  U32 word: 24;
 };
 typedef union gcreg gcreg;
 

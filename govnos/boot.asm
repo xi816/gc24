@@ -63,14 +63,13 @@ pstrcmp:
 
 dmemcmp:
   dex %cx
+.loop:
   ldds
   inx %si
   lodb %gi %bx
   cmp %ax %bx
   jne .fail
-  cmp %cx $00
-  je .eq
-  jmp dmemcmp
+  loop .loop
 .eq:
   mov %ax $00
   ret
@@ -99,6 +98,14 @@ memcpy:
 .loop:
   lodb %si %ax
   stob %gi %ax
+  loop .loop
+  ret
+
+memset:
+  dex %cx
+  mov %ax $00
+.loop:
+  stob %si %ax
   loop .loop
   ret
 
@@ -188,7 +195,8 @@ gfs2_read_file:
 .flcheck:
   inx %si       ; Get to the start of filename
   mov %cx 15    ; Check 15 bytes
-  mov %gi com_predefined_file_header
+  mov %gi file_header
+  inx %gi
   call dmemcmp
   cmp %ax $00
   je flcpy
@@ -284,6 +292,9 @@ shell:
   cmp %ax $00
   je govnos_gsfetch
 
+  mov %si file_header
+  mov %cx 16
+  call memset
   mov %si command
   mov %gi file_header
   inx %gi
@@ -296,7 +307,6 @@ shell:
   call memcpy
 
   mov %si file_header
-  trap
   call gfs2_read_file
   cmp %ax $00
   je .call
