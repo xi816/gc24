@@ -41,7 +41,7 @@ KEY2   = [
   "re", "rne", "rc", "rnc", "rs", "rn", "ri", "rni", "push",
   "stob", "stow", "stoh", "mul", "div", "sub", "loop", "pop",
   "ldds", "lddg", "stds", "stdg", "sti", "iret", "pow", "and",
-  "ora", "xor"
+  "ora", "xor", "sal", "sar"
 ];
 KEYR   = ["ax", "bx", "cx", "dx", "si", "gi", "sp", "bp"];
 
@@ -364,6 +364,8 @@ ParseInst = lambda toks, b, pos, pc: \
    (ASTINS, "INXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "inx") and (toks[pos+1][0] == T_DREW)) else
    (ASTINS, "DEXwl", toks[pos+1][1], pos + 2, pc + 4)         if ((b == "dex") and (toks[pos+1][0] == T_DREW)) else
    (ASTINS, "POWrc", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "pow") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_REG)) else
+   (ASTINS, "SALrg", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "sal") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
+   (ASTINS, "SARrg", (toks[pos+1][1], toks[pos+2][1]), pos + 3, pc + 2) if ((b == "sar") and (toks[pos+1][0] == T_REG) and (toks[pos+2][0] == T_INT)) else
    (ASTINS, "NOP", (), pos + 1, pc + 1)                      if ((b == "nop")) else
    (print("kasm: unknown instruction", toks[pos]) and exit(1))
   );
@@ -518,6 +520,8 @@ CompileInst = lambda prog, b, labels, pos: \
    ((0x30, *As24(labels[b[2]])), pos+1)            if (b[1] == "INXbl") else
    ((0x32, *As24(labels[b[2]])), pos+1)            if (b[1] == "DEXbl") else
    ((0xBF, (b[2][0]<<3)+b[2][1]), pos+1)           if (b[1] == "POWrc") else
+   ((0x7A, (b[2][0]<<5)+(b[2][1])), pos+1)         if (b[1] == "SALrg") else
+   ((0x7B, (b[2][0]<<5)+(b[2][1])), pos+1)         if (b[1] == "SARrg") else
    [print("kasm: unknown compilation node %s" % b[1]), (tuple(), 0x1_00_0000)][1]
   );
 

@@ -68,7 +68,6 @@ dmemcmp:
   inx %si
   lodb %gi %bx
   cmp %ax %bx
-  ; trap
   jne .fail
   loop .loop
 .eq:
@@ -201,7 +200,7 @@ gfs2_read_file:
   push %gi
   push %bx
   mov %gi %bx
-  ; inx %gi
+  inx %gi
   call dmemcmp
   pop %bx
   pop %gi
@@ -234,7 +233,6 @@ flcpy: ; %dx should already contain file's start sector
   ldds
   inx %si
   stob %gi %ax
-  ; trap
   loop .loop
 .end:
   mov %ax $00
@@ -306,12 +304,6 @@ shell:
   cmp %ax $00
   je govnos_help
 
-  mov %si command
-  mov %gi com_gsfetch
-  call strcmp
-  cmp %ax $00
-  je govnos_gsfetch
-
   mov %si file_header
   mov %cx 16
   call memset
@@ -327,6 +319,7 @@ shell:
   call memcpy
 
   mov %bx file_header
+  mov %gi $200000
   call gfs2_read_file
   cmp %ax $00
   je .call
@@ -345,40 +338,6 @@ govnos_hi:
   jmp shell.aftexec
 govnos_cls:
   mov %si cls_seq
-  int $81
-  jmp shell.aftexec
-govnos_gsfetch:
-  mov %si gsfc_000
-  int $81
-
-  ; Hostname
-  mov %si gsfc_001
-  int $81
-  mov %si env_HOST
-  int $81
-
-  ; OS name
-  mov %si gsfc_002
-  int $81
-  mov %si env_OS
-  int $81
-
-  ; CPU name
-  mov %si gsfc_003
-  int $81
-  mov %si env_CPU
-  int $81
-
-  ; Memory
-  mov %si gsfc_004
-  int $81
-  mov %ax bse
-  sub %ax $030002
-  call puti
-  mov %si gsfc_005
-  int $81
-
-  mov %si gsfc_logo
   int $81
   jmp shell.aftexec
 govnos_help:
@@ -470,16 +429,19 @@ welcome_msg:   bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
 krnl_load_msg: bytes "Loading ^[[92m:/krnl.bin/com^[[0m...$^@"
 bad_command:   bytes "Bad command.$^@"
 
-help_msg:    bytes "GovnOS help page 1/1$"
-             bytes "  gsfetch     Shot system info$"
-             bytes "  help        Show help$"
-             bytes "  echo        Echo text back to output$"
-             bytes "  exit        Exit from the shell$^@"
+help_msg:    bytes "+------------------------------------------+$"
+             bytes "|GovnOS help page 1/1                      |$"
+             bytes "|  calc        Calculator                  |$"
+             bytes "|  cls         Clear the screen            |$"
+             bytes "|  echo        Echo text back to output    |$"
+             bytes "|  exit        Exit from the shell         |$"
+             bytes "|  gsfetch     Show system info            |$"
+             bytes "|  help        Show help                   |$"
+             bytes "+------------------------------------------+$^@"
 
 com_hi:      bytes "hi^@"
 com_cls:     bytes "cls^@"
 com_calc:    bytes "calc^@"
-com_gsfetch: bytes "gsfetch^@"
 com_help:    bytes "help^@"
 com_echo:    bytes "echo "
 com_exit:    bytes "exit^@"
@@ -491,25 +453,13 @@ calc_02:     bytes "$Enter operation [+-*/]: ^@"
 calc_03:     bytes "Unknown operation. Make sure you typed +, -, *, /$^@"
 calc_04:     bytes "Division by 0 has been blocked by Pythagoras$^@"
 
-gsfc_000:    bytes "             ^[[97mgsfetch$^[[0m             ---------$^@"
-gsfc_001:    bytes "             ^[[97mHost: ^[[0m^@"
-gsfc_002:    bytes "$             ^[[97mOS: ^[[0m^@"
-gsfc_003:    bytes "$             ^[[97mCPU: ^[[0m^@"
-gsfc_004:    bytes "             ^[[97mMemory: ^[[0m^@"
-gsfc_005:    bytes "B/16MiB$^@"
-gsfc_logo:   bytes "^[[6A^[[33m  .     . .$"
-             bytes            "     A     .$"
-             bytes            "    (=) .$"
-             bytes            "  (=====)$"
-             bytes            " (========)^[[0m$$^@"
-
 env_HOST:    bytes "GovnPC 24 Super Edition^@"
-env_OS:      bytes "GovnOS 0.1.0 For GovnoCore24^@"
+env_OS:      bytes "GovnOS 0.2.0 For GovnoCore24^@"
 env_CPU:     bytes "Govno Core 24$^@"
 
 ; TODO: unhardcode file header TODO: remove this todo
-com_predefined_file_header: bytes "file.bin^@^@^@^@com^@"
-krnl_file_header:           bytes "krnl.bin^@^@^@^@com^@"
+com_predefined_file_header: bytes "^Afile.bin^@^@^@^@com^@"
+krnl_file_header:           bytes "^Akrnl.bin^@^@^@^@com^@"
 file_header:                reserve 16 bytes
 file_tag:                   bytes "com^@"
 

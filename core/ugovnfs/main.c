@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define FULL_FS_END 0x800000
+
 // The header is the first 32 bytes of the disk
 uint8_t readHeader(uint8_t* disk) {
   puts("Disk info:");
@@ -32,9 +34,10 @@ uint16_t firstFileSector(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
   return 0;
 }
 
-uint16_t firstEmptySector(uint8_t* disk) {
+uint16_t firstEmptySector(uint8_t* disk, uint8_t* lastByte) {
   uint16_t sector = 0x0001;
   while ((disk[sector*512] != 0x00) && (disk[sector*512] != 0xF7)) sector++;
+  *lastByte = disk[sector*512];
   return sector;
 }
 
@@ -47,6 +50,16 @@ uint8_t getFileSize(uint8_t* disk, uint8_t* filename, uint8_t* tag) {
   uint32_t filesize = 494;
   while (fs = nextLink(disk, fs)) filesize += 494;
   return filesize;
+}
+
+uint16_t getLastOccupiedSector(uint8_t* disk) {
+  uint32_t addr = FULL_FS_END;
+  while (addr >= 0x000200) {
+    if (disk[addr]) {
+      return addr/0x200;
+    }
+    addr -= 0x200;
+  }
 }
 
 uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t* g_tag) {
@@ -65,7 +78,8 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
     printf("Right now ugovnfs can't handle files more than 494 bytes, sorry");
     exit(1);
   }
-  uint16_t emptySector = firstEmptySector(disk);
+  uint8_t lastByte;
+  uint16_t emptySector = firstEmptySector(disk, &lastByte);
   printf("empty sector\t%04X\n", emptySector);
   printf("filename\t%.11s\n", g_filename);
   printf("tag\t\t%.3s\n", g_tag);
@@ -74,6 +88,11 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
   strcpy(disk+emptySector*512+1, g_filename);
   memcpy(disk+emptySector*512+13, g_tag, 3);
   memcpy(disk+emptySector*512+16, file, 494);
+  if (lastByte == 0xF7) { // If we erased the signature, return it back
+    uint16_t los = getLastOccupiedSector(disk);
+    printf("last occupied sector: %04X\n", los);
+    disk[(los+1)*512] = 0xF7;
+  }
   return 0;
 }
 
@@ -92,6 +111,7 @@ uint8_t readFilenames(uint8_t* disk, char c) {
 
 // CLI tool to make GovnFS partitions
 int main(int argc, char** argv) {
+  puts("using 8 MiB as FS limit");
   if (argc == 1) {
     puts("ugovnfs: no arguments given");
     return 1;

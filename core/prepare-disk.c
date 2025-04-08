@@ -23,15 +23,31 @@ int32_t main(int argc, char** argv) {
   sprintf(fcom, "truncate %s -s 16M", argv[1]); system(fcom);
   sprintf(fcom, "./mkfs.govnfs %s", argv[1]); system(fcom);
 
-  // Compile GovnOS
-  // printf("Compiling GovnOS...\n");
+  // Compile GovnBIOS
   system("./kasm -o 700000 -e govnos/govnbios.asm govnos/govnbios.exp");
   system("./kasm -o 700000 govnos/govnbios.asm bios.img");
 
+  // Compile GovnOS
+  // Bootloader
   system("./kasm -i govnos/govnbios.exp govnos/boot.asm govnos/boot.bin");
+  system("./kasm -e govnos/boot.asm govnos/boot.exp");
+
+  // Kernel
+  system("./kasm -o A00000 govnos/krnl.asm govnos/krnl.bin");
+  system("./kasm -o A00000 -e govnos/krnl.asm govnos/krnl.exp");
+
+  // Core programs
+  system("./kasm -o 200000 -i govnos/krnl.exp govnos/info.asm govnos/info.bin");
+  system("./kasm -o 200000 -i govnos/boot.exp govnos/gsfetch.asm govnos/gsfetch.bin");
 
   // Load GovnOS
   printf("Loading GovnOS into %s%s%s... ", color, argv[1], rcolor); fflush(stdout);
+  // Bootloader
   sprintf(fcom, "./gboot C00000 %s govnos/boot.bin", argv[1]); system(fcom);
+
+  // Core programs
+  sprintf(fcom, "./ugovnfs -c %s govnos/krnl.bin krnl.bin com", argv[1]); system(fcom);
+  sprintf(fcom, "./ugovnfs -c %s govnos/info.bin info com", argv[1]); system(fcom);
+  sprintf(fcom, "./ugovnfs -c %s govnos/gsfetch.bin gsfetch com", argv[1]); system(fcom);
   return 0;
 }

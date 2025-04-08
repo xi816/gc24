@@ -372,6 +372,20 @@ U8 RET(GC* gc) {
   return 0;
 }
 
+// 7A           sal reg imm5
+U8 SALrg(GC* gc) {
+  gc->reg[(gc->mem[gc->PC+1]&0b11100000)<<5].word <<= gc->mem[gc->PC+1]&0b00011111;
+  gc->PC += 2;
+  return 0;
+}
+
+// 7B           sar reg imm5
+U8 SARrg(GC* gc) {
+  gc->reg[(gc->mem[gc->PC+1]&0b11100000)<<5].word >>= gc->mem[gc->PC+1]&0b00011111;
+  gc->PC += 2;
+  return 0;
+}
+
 // 7E           stob rc
 U8 STOBc(GC* gc) {
   gcrc_t rc = ReadRegClust(gc->mem[gc->PC+1]);
@@ -749,7 +763,7 @@ U8 (*INSTS[256])() = {
   &INXw , &INT  , &DEXw , &UNK  , &UNK  , &UNK  , &UNK  , &ADDrc, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri, &ADDri,
   &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrb, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw, &ADDrw,
   &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDbr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr, &ADDwr,
-  &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CALLa, &RET  , &UNK  , &UNK  , &UNK  , &UNK  , &STOBc, &LODBc,
+  &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CMPri, &CALLa, &RET  , &SALrg, &SARrg, &UNK  , &UNK  , &STOBc, &LODBc,
   &DIVri, &DIVri, &DIVri, &DIVri, &DIVri, &DIVri, &JMPa , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOWc, &LODWc,
   &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &SUBrw, &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &UNK  , &STOHc, &LODHc,
   &JEa  , &JNEa , &JCa  , &JNCa , &JSa  , &JNa  , &JIa  , &JNIa , &RE   , &RNE  , &RC   , &RNC  , &RS   , &RN   , &RI   , &RNI  ,

@@ -1,18 +1,20 @@
   jmp kmain
-
-puts:
+kprint:
   lodb %si %ax
   cmp %ax $00
   re
   push %ax
   int 2
-  jmp puts
+  jmp kprint
 
-kmain:
+ktest:
   mov %si hk
-  call puts
+  call kprint
   int 1
   pop %dx
   ret
 
-hk: bytes "!$^@"
+kmain:
+  ret
+
+hk: bytes "Hello From Kernel!$^@"

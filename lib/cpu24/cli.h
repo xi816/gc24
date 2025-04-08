@@ -71,7 +71,7 @@ U8 ExecD(GC* gc, U8 trapped) {
   char* buf = (char*)malloc(bufsize);
 
   if (trapped) printf("\n\033[91mtrapped\033[0m at PC$%06X\n", gc->PC);
-  else printf("gc16x emu %s\n", GC24_VERSION);
+  else printf("gc24 emu %s\n", GC24_VERSION);
 
   execloop:
   fputs(": ", stdout);
@@ -108,7 +108,7 @@ U8 ExecD(GC* gc, U8 trapped) {
       cli_InsertMem(gc, strtol(tokens[1], NULL, 16), strtol(tokens[2], NULL, 16));
     break;
   case 'h':
-    puts("gc16x cli help:");
+    puts("gc24 cli help:");
     puts("  c       Clear the screen");
     puts("  h       Show help");
     puts("  m <00>  Dump memory");
