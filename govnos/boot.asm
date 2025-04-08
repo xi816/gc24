@@ -274,6 +274,12 @@ shell:
   je govnos_hi
 
   mov %si command
+  mov %gi com_date
+  call strcmp
+  cmp %ax $00
+  je govnos_date
+
+  mov %si command
   mov %gi com_echo
   mov %cx ' '
   call pstrcmp
@@ -335,6 +341,44 @@ shell:
 govnos_hi:
   mov %si hai_world
   int $81
+  jmp shell.aftexec
+govnos_date:
+  int 3
+  mov %ax %dx
+  sar %ax 9
+  add %ax 1970
+  push %dx
+  call puti
+  pop %dx
+  push '-'
+  int 2
+  mov %ax %dx
+  sar %ax 5
+  mov %bx $000F
+  and %ax %bx
+  inx %ax
+  cmp %ax 10
+  jg .p0
+  push '0'
+  int 2
+.p0:
+  push %dx
+  call puti
+  pop %dx
+  push '-'
+  int 2
+  mov %ax %dx
+  mov %bx $001F
+  and %ax %bx
+  inx %ax
+  cmp %ax 10
+  jg .p1
+  push '0'
+  int 2
+.p1:
+  call puti
+  push '$'
+  int 2
   jmp shell.aftexec
 govnos_cls:
   mov %si cls_seq
@@ -442,6 +486,7 @@ help_msg:    bytes "+------------------------------------------+$"
 com_hi:      bytes "hi^@"
 com_cls:     bytes "cls^@"
 com_calc:    bytes "calc^@"
+com_date:    bytes "date^@"
 com_help:    bytes "help^@"
 com_echo:    bytes "echo "
 com_exit:    bytes "exit^@"

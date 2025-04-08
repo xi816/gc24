@@ -8,9 +8,9 @@ typedef struct govnodate govnodate;
 
 govnodate govnodate_convert(unsigned short date) {
   return (govnodate){
-    .year = date / 372 + 1970,
-    .month = (date % 372) / 31 + 1,
-    .day = (date % 372) % 31 + 1
+    .year = ((date & 0b1111111000000000)>>9) + 1970,
+    .month = ((date & 0b0000000111100000)>>5) + 1,
+    .day = (date & 0b0000000000011111) + 1
   };
 }
 

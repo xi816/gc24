@@ -374,14 +374,14 @@ U8 RET(GC* gc) {
 
 // 7A           sal reg imm5
 U8 SALrg(GC* gc) {
-  gc->reg[(gc->mem[gc->PC+1]&0b11100000)<<5].word <<= gc->mem[gc->PC+1]&0b00011111;
+  gc->reg[(gc->mem[gc->PC+1]&0b11100000)>>5].word <<= gc->mem[gc->PC+1]&0b00011111;
   gc->PC += 2;
   return 0;
 }
 
 // 7B           sar reg imm5
 U8 SARrg(GC* gc) {
-  gc->reg[(gc->mem[gc->PC+1]&0b11100000)<<5].word >>= gc->mem[gc->PC+1]&0b00011111;
+  gc->reg[(gc->mem[gc->PC+1]&0b11100000)>>5].word >>= gc->mem[gc->PC+1]&0b00011111;
   gc->PC += 2;
   return 0;
 }
