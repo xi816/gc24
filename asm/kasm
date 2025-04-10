@@ -79,6 +79,16 @@ def OffsetLabs(labs: dict, offset: int):
     labs[i] += offset;
   return labs;
 
+def usage():
+  print("kasm -- Kakashka Assembler 1.0 (but who cares about the version anyways)");
+  print("Usage: kasm [OPTIONS] <file.asm> <file.bin>");
+  print("Options:");
+  print("  -h      Show help");
+  print("  -o [VAL]     Offset labels to VAL");
+  print("  -i <file>    Import labels from a file");
+  print("  -e           Export labels to the output file");
+  print("  -I           Start interactive mode");
+
 # Lexer:
 def Lex(prog: str, filename: str):
   prog += "\n\0";
@@ -569,6 +579,7 @@ def main(argc: int, argv: list) -> int:
   exportmode = False;
   if (argc == 1):
     print("No arguments given");
+    usage();
     return 1;
   # elif (argc == 2):
   #   print("No binary filename given");
@@ -594,6 +605,9 @@ def main(argc: int, argv: list) -> int:
         IKasm();
         argp += 1;
         break;
+      case "-h":
+        usage();
+        return 0;
       case _:
         progname = argv[argp];
         outname = argv[argp+1];
