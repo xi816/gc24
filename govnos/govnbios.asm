@@ -53,7 +53,7 @@ GovnBIOS:
 CLEARSCR:      bytes "^[[48;5;232m^[[2J^[[H^@"
 CLEARSCR_BOOT: bytes "^[[0m^[[2J^[[H^@"
 CURSOR_SHOW:   bytes "^[[?25h^@"
-WELCOMEMSG:    bytes "^[[48;5;253m^[[30m                                   GovnBIOS Boot Manager^[[K^[[48;5;232m$"
+WELCOMEMSG:    bytes "^[[48;5;253m^[[30m                                                         GovnBIOS Boot Manager^[[K^[[48;5;232m$"
                bytes "^[[s^[[999B^[[48;5;253m^[[K^[[999DENTER=Choose          0=Shutdown^[[48;5;232m^[[u^@"
 GOVNOSMSG:     bytes "^[[38;5;253m$Choose an operating system to start, or press TAB to do nothing.$"
                bytes "(Use the arrow keys to highlight your choice, then press ENTER.)$$^@"
