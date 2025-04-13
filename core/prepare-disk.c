@@ -39,6 +39,7 @@ int32_t main(int argc, char** argv) {
   // Core programs
   system("./kasm -o 200000 -i govnos/krnl.exp govnos/info.asm govnos/info.bin");
   system("./kasm -o 200000 -i govnos/boot.exp govnos/gsfetch.asm govnos/gsfetch.bin");
+  system("./kasm -o 200000 -i govnos/krnl.exp govnos/dir.asm govnos/dir.bin");
 
   // Load GovnOS
   printf("Loading GovnOS into %s%s%s... ", color, argv[1], rcolor); fflush(stdout);
@@ -49,5 +50,6 @@ int32_t main(int argc, char** argv) {
   sprintf(fcom, "./ugovnfs -c %s govnos/krnl.bin krnl.bin com", argv[1]); system(fcom);
   sprintf(fcom, "./ugovnfs -c %s govnos/info.bin info com", argv[1]); system(fcom);
   sprintf(fcom, "./ugovnfs -c %s govnos/gsfetch.bin gsfetch com", argv[1]); system(fcom);
+  sprintf(fcom, "./ugovnfs -c %s govnos/dir.bin dir com", argv[1]); system(fcom);
   return 0;
 }

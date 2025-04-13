@@ -93,6 +93,13 @@ strnul:
   mov %ax $00
   ret
 
+strcpy:
+  lodb %si %ax
+  cmp %ax $00
+  re
+  stob %gi %ax
+  jmp strcpy
+
 memcpy:
   dex %cx
 .loop:
@@ -179,6 +186,17 @@ scani:
   div %ax 10
   jmp .loop
 
+; GovnFS 2.0 driver stores frequently used information
+; to a config field at bank $1F
+; Entries:
+;   $1F0000 -- Drive letter
+gfs2_configure:
+  mov %si $000010
+  mov %gi $1F0000
+  ldds
+  stob %gi %ax
+  ret
+
 gfs2_read_file:
   mov %dx $0001 ; Starting search at sector 1 (sector 0 is for header data)
   mov %si $0200 ; Precomputed starting address (sector*512)
@@ -238,11 +256,36 @@ flcpy: ; %dx should already contain file's start sector
   mov %ax $00
   ret
 
+fre_sectors:
+  mov %bx 0
+  mov %si $000200
+.loop:
+  ldds
+  add %si $200
+  cmp %ax $01
+  je .inc
+  cmp %ax $F7
+  je .end
+  cmp %si $800000
+.inc: ; RIP GovnDate 2.025e3-04-13-2.025e3-04-13
+  inx %bx
+  jmp .loop
+.end:
+  mov %ax %bx
+  ret
+
 boot:
   ; Load the kernel libraries
+  call gfs2_configure
   mov %si welcome_msg
   int $81
   mov %si krnl_load_msg
+  int $81
+  mov %si emp_sec_msg00
+  int $81
+  call fre_sectors
+  call puti
+  mov %si emp_sec_msg01
   int $81
 
   mov %bx krnl_file_header
@@ -316,8 +359,7 @@ shell:
   mov %si command
   mov %gi file_header
   inx %gi
-  mov %cx 11
-  call memcpy
+  call strcpy
   mov %si file_tag
   mov %gi file_header
   add %gi 13
@@ -471,6 +513,8 @@ govnos_calc:
 
 welcome_msg:   bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
 krnl_load_msg: bytes "Loading ^[[92m:/krnl.bin/com^[[0m...$^@"
+emp_sec_msg00: bytes "$Disk sectors used: ^[[92m^@"
+emp_sec_msg01: bytes "^[[0m$$^@"
 bad_command:   bytes "Bad command.$^@"
 
 help_msg:    bytes "+------------------------------------------+$"
@@ -499,7 +543,7 @@ calc_03:     bytes "Unknown operation. Make sure you typed +, -, *, /$^@"
 calc_04:     bytes "Division by 0 has been blocked by Pythagoras$^@"
 
 env_HOST:    bytes "GovnPC 24 Super Edition^@"
-env_OS:      bytes "GovnOS 0.2.0 For GovnoCore24^@"
+env_OS:      bytes "GovnOS 0.2.1 For GovnoCore24^@"
 env_CPU:     bytes "Govno Core 24$^@"
 
 ; TODO: unhardcode file header TODO: remove this todo

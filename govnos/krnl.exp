@@ -1,4 +1,9 @@
-kprint	A00004
-ktest	A00013
-kmain	A00020
-hk	A00021
+memsub	A00004
+memsub.loop	A00005
+memsub.sub	A00012
+dmemcpy	A0001A
+dmemcpy.loop	A0001B
+kprint	A00024
+ktest	A00033
+kmain	A00040
+hk	A00041

@@ -29,8 +29,44 @@ govnos_gsfetch:
   mov %si gsfc_005
   int $81
 
+  mov %si gsfc_006
+  int $81
+  mov %cx 7 ; 8 colors
+  mov %ax $30
+.gsfcL1:
+  push '^[' int $2
+  push '['  int $2
+  push '4'  int $2
+  push %ax  int $2
+  push 'm'  int $2
+  push ' '  int $2
+  push ' '  int $2
+  inx %ax
+  loop .gsfcL1
+
+  mov %si gsfc_007
+  int $81
+  mov %si gsfc_006
+  int $81
+  mov %cx 7 ; 8 colors
+  mov %ax $30
+.gsfcL2:
+  push '^[' int $2
+  push '['  int $2
+  push '1'  int $2
+  push '0'  int $2
+  push %ax  int $2
+  push 'm'  int $2
+  push ' '  int $2
+  push ' '  int $2
+  inx %ax
+  loop .gsfcL2
+  mov %si gsfc_007
+  int $81
+
   mov %si gsfc_logo
   int $81
+
   jmp shell.aftexec
 
 gsfc_000:    bytes "             ^[[97mgsfetch$^[[0m             ---------$^@"
@@ -38,9 +74,11 @@ gsfc_001:    bytes "             ^[[97mHost: ^[[0m^@"
 gsfc_002:    bytes "$             ^[[97mOS: ^[[0m^@"
 gsfc_003:    bytes "$             ^[[97mCPU: ^[[0m^@"
 gsfc_004:    bytes "             ^[[97mMemory: ^[[0m^@"
-gsfc_005:    bytes "B/16MiB$^@"
-gsfc_logo:   bytes "^[[6A^[[33m  .     . .$"
+gsfc_005:    bytes "B/16MiB$$^@"
+gsfc_006:    bytes "             ^@"
+gsfc_007:    bytes "^[[0m$^@"
+gsfc_logo:   bytes "^[[9A^[[33m  .     . .$"
              bytes            "     A     .$"
              bytes            "    (=) .$"
              bytes            "  (=====)$"
-             bytes            " (========)^[[0m$$^@"
+             bytes            " (========)^[[0m$$$$$^@"
