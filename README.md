@@ -6,9 +6,12 @@
 A 24-bit address bus. Because why not?\
 (Inspired by Ricoh 5A22)
 
+## Building project
+
+You can build the project with `make all`.
+To generate GovnBIOS and GovnOS run `make prepare`.
+
 ## Usage
-To compile everything, run `./ball`. It compiles itself and gc24.\
-To compile GovnBIOS & GovnOS, use `./prepare-disk disk.img`. This will install them onto the disk and create it, if it doesn't exist.
 You can write programs either in GovnASM (and compile with ./kasm), or
 in raw binary format.
 To start the emulator, use `./gc24 file.bin`.
