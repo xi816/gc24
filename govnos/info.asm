@@ -4,7 +4,7 @@ info_main:
   ret
 
 govnos_info: bytes "^[[96m"
-             bytes "GovnOS version: 0.2.1-24$"
-             bytes "Release date: 253*8+1-04-13$"
+             bytes "GovnOS version: 0.2.2-24$"
+             bytes "Release date: 2025-04-16$"
              bytes "(c) Xi816, 253*8+1$"
              bytes "^[[0m^@"

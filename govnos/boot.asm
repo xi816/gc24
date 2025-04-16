@@ -543,7 +543,7 @@ calc_03:     bytes "Unknown operation. Make sure you typed +, -, *, /$^@"
 calc_04:     bytes "Division by 0 has been blocked by Pythagoras$^@"
 
 env_HOST:    bytes "GovnPC 24 Super Edition^@"
-env_OS:      bytes "GovnOS 0.2.1 For GovnoCore24^@"
+env_OS:      bytes "GovnOS 0.2.2 For GovnoCore24^@"
 env_CPU:     bytes "Govno Core 24$^@"
 
 ; TODO: unhardcode file header TODO: remove this todo

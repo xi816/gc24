@@ -40,7 +40,8 @@ dir_main:
   mov %cx 15
   call memsub
   mov %si header
-  int $81
+  mov %cx 15
+  call kwrite
   pop %si
   push '$'
   int 2

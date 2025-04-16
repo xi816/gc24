@@ -31,6 +31,17 @@ kprint:
   int 2
   jmp kprint
 
+kwrite:
+  push %ax
+  dex %cx
+.loop:
+  lodb %si %ax
+  push %ax
+  int $02
+  loop .loop
+  pop %ax
+  ret
+
 ktest:
   mov %si hk
   call kprint

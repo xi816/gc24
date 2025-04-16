@@ -4,6 +4,8 @@ memsub.sub	A00012
 dmemcpy	A0001A
 dmemcpy.loop	A0001B
 kprint	A00024
-ktest	A00033
-kmain	A00040
-hk	A00041
+kwrite	A00033
+kwrite.loop	A00036
+ktest	A00043
+kmain	A00050
+hk	A00051

@@ -70,12 +70,14 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
   }
   fseek(fl, 0, SEEK_END);
   uint32_t flsize = ftell(fl);
-  uint8_t file[494];
+  flsize = (uint32_t)ceil((float)flsize/494.0f)*494;
+  printf("Allocating %u bytes for the file\n", flsize);
+  uint8_t file[flsize];
   fseek(fl, 0, SEEK_SET);
   fread(file, 1, 494, fl);
   fclose(fl);
   if (flsize > 494) {
-    printf("Right now ugovnfs can't handle files more than 494 bytes, sorry");
+    printf("Right now ugovnfs can't handle files more than 494 bytes, sorry\n");
     exit(1);
   }
   uint8_t lastByte;
