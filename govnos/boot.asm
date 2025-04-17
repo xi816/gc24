@@ -1,4 +1,4 @@
-; Bootloader
+; boot.asm -- a bootloader for the GovnOS operating system
 reboot: jmp boot
 
 scans:
@@ -251,6 +251,20 @@ flcpy: ; %dx should already contain file's start sector
   ldds
   inx %si
   stob %gi %ax
+  loop .loop
+  ldds
+  mov %bx %ax
+  inx %si
+  ldds
+  mul %ax $100
+  add %ax %bx
+  cmp %ax $00
+  je .end
+  mov %si %ax
+  mul %si $200
+  add %si 16
+  mov %cx 494
+  dex %cx
   loop .loop
 .end:
   mov %ax $00

@@ -42,7 +42,7 @@ int32_t main(int argc, char** argv) {
   system("./kasm -o 200000 -i govnos/krnl.exp govnos/dir.asm govnos/dir.bin");
 
   // Load GovnOS
-  printf("Loading GovnOS into %s%s%s... ", color, argv[1], rcolor); fflush(stdout);
+  printf("\nLoading GovnOS into %s%s%s... ", color, argv[1], rcolor); fflush(stdout);
   // Bootloader
   sprintf(fcom, "./gboot C00000 %s govnos/boot.bin", argv[1]); system(fcom);
 

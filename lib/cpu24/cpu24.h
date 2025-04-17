@@ -802,7 +802,6 @@ U0 Reset(GC* gc) {
   gc->reg[SP].word = 0xFEFFFF;
   gc->reg[BP].word = 0xFEFFFF;
   gc->PC = 0x700000;
-  printf("%06X\n", gc->PC);
 
   // Reset the general purpose registers
   for (U8 i = 0; i < 6; i++) 

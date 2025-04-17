@@ -442,9 +442,9 @@ def Parse(toks: list, filename: str, expm: int) -> list:
       exit(1);
   ast.append([ASTEOF, 0, 0, pc]);
   if (expm):
-    print(f"\033[92m{filename}: exporting {pc} bytes\033[0m");
+    print(f"\033[92m{filename}: exported {len(labels)} symbols\033[0m");
   else:
-    print(f"{filename}: program size: {pc} bytes");
+    print(f"{filename}: compiled {pc} bytes");
   return ast, labels;
 
 # Little endian
@@ -626,7 +626,6 @@ def main(argc: int, argv: list) -> int:
     exit(tokens);
   ast, labs = Parse(tokens, progname, exportmode);
   labs = OffsetLabs(labs, offset);
-  PrintAst(ast);
   if (exportmode):
     ExportLabs(progname, labs, outname);
     exit(1);

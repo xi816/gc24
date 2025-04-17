@@ -29,6 +29,15 @@ govnos_gsfetch:
   mov %si gsfc_005
   int $81
 
+  ; Disk space
+  mov %si gsfc_008
+  int $81
+  call fre_sectors
+  mul %ax 512
+  call puti
+  mov %si gsfc_009
+  int $81
+
   mov %si gsfc_006
   int $81
   mov %cx 7 ; 8 colors
@@ -74,11 +83,13 @@ gsfc_001:    bytes "             ^[[97mHost: ^[[0m^@"
 gsfc_002:    bytes "$             ^[[97mOS: ^[[0m^@"
 gsfc_003:    bytes "$             ^[[97mCPU: ^[[0m^@"
 gsfc_004:    bytes "             ^[[97mMemory: ^[[0m^@"
-gsfc_005:    bytes "B/16MiB$$^@"
+gsfc_005:    bytes "B/16MiB$^@"
 gsfc_006:    bytes "             ^@"
 gsfc_007:    bytes "^[[0m$^@"
-gsfc_logo:   bytes "^[[9A^[[33m  .     . .$"
+gsfc_008:    bytes "             ^[[97mDisk space used: ^[[0m^@"
+gsfc_009:    bytes " B/16 MiB$$^@"
+gsfc_logo:   bytes "^[[10A^[[33m  .     . .$"
              bytes            "     A     .$"
              bytes            "    (=) .$"
              bytes            "  (=====)$"
-             bytes            " (========)^[[0m$$$$$^@"
+             bytes            " (========)^[[0m$$$$$$^@"
