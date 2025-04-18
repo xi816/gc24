@@ -1,23 +1,25 @@
 ; boot.asm -- a bootloader for the GovnOS operating system
 reboot: jmp boot
 
-scans:
+b_scans:
   int 1
   pop %ax
   cmp %ax $7F
   je .back
+  cmp %ax $1B
+  je b_scans
   push %ax
   int 2
   cmp %ax $0A
   je .end
   stob %si %ax
   inx @clen
-  jmp scans
+  jmp b_scans
 .back:
   mov %gi clen
   lodw %gi %ax
   cmp %ax $00
-  je scans
+  je b_scans
 .back_strict:
   push %si
   mov %si bs_seq
@@ -25,20 +27,20 @@ scans:
   pop %si
   dex %si
   dex @clen
-  jmp scans
+  jmp b_scans
 .end:
   mov %ax $00
   stob %si %ax
   ret
 
-strcmp:
+b_strcmp:
   lodb %si %ax
   lodb %gi %bx
   cmp %ax %bx
   jne .fail
   cmp %ax $00
   je .eq
-  jmp strcmp
+  jmp b_strcmp
 .eq:
   mov %ax $00
   ret
@@ -46,14 +48,14 @@ strcmp:
   mov %ax $01
   ret
 
-pstrcmp:
+b_pstrcmp:
   lodb %si %ax
   lodb %gi %bx
   cmp %ax %bx
   jne .fail
   cmp %ax %cx
   je .eq
-  jmp pstrcmp
+  jmp b_pstrcmp
 .eq:
   mov %ax $00
   ret
@@ -61,7 +63,7 @@ pstrcmp:
   mov %ax $01
   ret
 
-dmemcmp:
+b_dmemcmp:
   dex %cx
 .loop:
   ldds
@@ -77,13 +79,13 @@ dmemcmp:
   mov %ax $01
   ret
 
-strtok:
+b_strtok:
   lodb %si %ax
   cmp %ax %cx
   re
-  jmp strtok
+  jmp b_strtok
 
-strnul:
+b_strnul:
   lodb %si %ax
   cmp %ax $00
   je .nul
@@ -93,14 +95,14 @@ strnul:
   mov %ax $00
   ret
 
-strcpy:
+b_strcpy:
   lodb %si %ax
   cmp %ax $00
   re
   stob %gi %ax
-  jmp strcpy
+  jmp b_strcpy
 
-memcpy:
+b_memcpy:
   dex %cx
 .loop:
   lodb %si %ax
@@ -108,7 +110,7 @@ memcpy:
   loop .loop
   ret
 
-memset:
+b_memset:
   dex %cx
   mov %ax $00
 .loop:
@@ -116,7 +118,7 @@ memset:
   loop .loop
   ret
 
-write:
+b_write:
   push %ax
   dex %cx
 .loop:
@@ -126,8 +128,9 @@ write:
   loop .loop
   pop %ax
   ret
-puti:
-  mov %gi puti_buf
+
+b_puti:
+  mov %gi b_puti_buf
   add %gi 7
 .loop:
   div %ax 10 ; Divide and get the remainder into %dx
@@ -136,20 +139,20 @@ puti:
   sub %gi 2
   cmp %ax $00
   jne .loop
-  mov %si puti_buf
+  mov %si b_puti_buf
   mov %cx 8
-  call write
-  call puti_clr
+  call b_write
+  call b_puti_clr
   ret
-puti_clr:
-  mov %si puti_buf
+b_puti_clr:
+  mov %si b_puti_buf
   mov %ax $00
   mov %cx 7 ; 8
 .loop:
   stob %si %ax
   loop .loop
   ret
-puti_buf: reserve 8 bytes
+b_puti_buf: reserve 8 bytes
 
 scani:
   mov %ax $00
@@ -219,7 +222,7 @@ gfs2_read_file:
   push %bx
   mov %gi %bx
   inx %gi
-  call dmemcmp
+  call b_dmemcmp
   pop %bx
   pop %gi
   cmp %ax $00
@@ -298,7 +301,7 @@ boot:
   mov %si emp_sec_msg00
   int $81
   call fre_sectors
-  call puti
+  call b_puti
   mov %si emp_sec_msg01
   int $81
 
@@ -317,68 +320,68 @@ shell:
   mov %ax $0000
   stow %si %ax
   mov %si command
-  call scans
+  call b_scans
 .process:
   mov %si command
-  call strnul
+  call b_strnul
   cmp %ax $00
   je .aftexec
 
   mov %si command
   mov %gi com_hi
-  call strcmp
+  call b_strcmp
   cmp %ax $00
   je govnos_hi
 
   mov %si command
   mov %gi com_date
-  call strcmp
+  call b_strcmp
   cmp %ax $00
   je govnos_date
 
   mov %si command
   mov %gi com_echo
   mov %cx ' '
-  call pstrcmp
+  call b_pstrcmp
   cmp %ax $00
   je govnos_echo
 
   mov %si command
   mov %gi com_exit
-  call strcmp
+  call b_strcmp
   cmp %ax $00
   je govnos_exit
 
   mov %si command
   mov %gi com_cls
-  call strcmp
+  call b_strcmp
   cmp %ax $00
   je govnos_cls
 
   mov %si command
   mov %gi com_calc
-  call strcmp
+  call b_strcmp
   cmp %ax $00
   je govnos_calc
 
   mov %si command
   mov %gi com_help
-  call strcmp
+  call b_strcmp
   cmp %ax $00
   je govnos_help
 
   mov %si file_header
   mov %cx 16
-  call memset
+  call b_memset
   mov %si command
   mov %gi file_header
   inx %gi
-  call strcpy
+  call b_strcpy
   mov %si file_tag
   mov %gi file_header
   add %gi 13
   mov %cx 3
-  call memcpy
+  call b_memcpy
 
   mov %bx file_header
   mov %gi $200000
@@ -404,7 +407,7 @@ govnos_date:
   sar %ax 9
   add %ax 1970
   push %dx
-  call puti
+  call b_puti
   pop %dx
   push '-'
   int 2
@@ -419,7 +422,7 @@ govnos_date:
   int 2
 .p0:
   push %dx
-  call puti
+  call b_puti
   pop %dx
   push '-'
   int 2
@@ -432,7 +435,7 @@ govnos_date:
   push '0'
   int 2
 .p1:
-  call puti
+  call b_puti
   push '$'
   int 2
   jmp shell.aftexec
@@ -450,7 +453,7 @@ govnos_exit:
 govnos_echo:
   mov %si command
   mov %cx ' '
-  call strtok
+  call b_strtok
   int $81
   push $0A
   int 2
@@ -492,19 +495,19 @@ govnos_calc:
   jmp .unk
 .add:
   add %ax %bx
-  call puti
+  call b_puti
   push '$'
   int $02
   jmp shell.aftexec
 .sub:
   sub %ax %bx
-  call puti
+  call b_puti
   push '$'
   int $02
   jmp shell.aftexec
 .mul:
   mul %ax %bx
-  call puti
+  call b_puti
   push '$'
   int $02
   jmp shell.aftexec
@@ -512,7 +515,7 @@ govnos_calc:
   cmp %bx $00
   je .div_panic
   div %ax %bx
-  call puti
+  call b_puti
   push '$'
   int $02
   jmp shell.aftexec
@@ -535,6 +538,7 @@ help_msg:    bytes "+------------------------------------------+$"
              bytes "|GovnOS help page 1/1                      |$"
              bytes "|  calc        Calculator                  |$"
              bytes "|  cls         Clear the screen            |$"
+             bytes "|  dir         Show files on the disk      |$"
              bytes "|  echo        Echo text back to output    |$"
              bytes "|  exit        Exit from the shell         |$"
              bytes "|  gsfetch     Show system info            |$"

@@ -1,6 +1,6 @@
 info_main:
   mov %si govnos_info
-  call kprint
+  int $81
   ret
 
 govnos_info: bytes "^[[96m"

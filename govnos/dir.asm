@@ -16,13 +16,16 @@ dir_main:
   mov %si $000200
 .loop:
   ldds
-  add %si $200
   cmp %ax $01
+  push %si
   je .print
+  pop %si
   cmp %ax $F7
   re
   cmp %si $800000
   re
+  add %si $200
+  jmp .loop
 .print:
   push ' '
   int 2
@@ -41,10 +44,12 @@ dir_main:
   call memsub
   mov %si header
   mov %cx 15
-  call kwrite
+  call write
   pop %si
   push '$'
   int 2
+  pop %si
+  add %si $200
   jmp .loop
 
 dir_msg00: bytes "Volume in drive ^@"

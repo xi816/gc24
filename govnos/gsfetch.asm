@@ -25,7 +25,7 @@ govnos_gsfetch:
   int $81
   mov %ax bse
   sub %ax $030002
-  call puti
+  call b_puti
   mov %si gsfc_005
   int $81
 
@@ -34,7 +34,7 @@ govnos_gsfetch:
   int $81
   call fre_sectors
   mul %ax 512
-  call puti
+  call b_puti
   mov %si gsfc_009
   int $81
 

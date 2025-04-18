@@ -1,4 +1,7 @@
-dir_main	30000
-dir_main.loop	30008
-dir_main.print	30020
-header	3004B
+dir_main	200000
+dir_main.loop	200028
+dir_main.print	200047
+dir_msg00	200095
+dir_msg01	2000A6
+dir_msg02	2000C3
+header	2000C6

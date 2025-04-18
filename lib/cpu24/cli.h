@@ -19,6 +19,13 @@ U8 cli_DisplayReg(GC* gc) {
   printf("\n   -I---ZNC\n");
 }
 
+U8 cli_DisplayStack(GC* gc, U16 N) {
+  for (U8 i = 0; i < N; i++) {
+    printf("\033[93m%06X\033[0m\t\033[96m$%06X\033[0m\n", 0xFEFFFF-(i*3),
+      ((gc->mem[0xFEFFFF-(i*3-2)]) + (gc->mem[0xFEFFFF-(i*3-1)] << 8) + (gc->mem[0xFEFFFF-(i*3)] << 16)));
+  }
+}
+
 U8 putmc(U8 c) {
   switch (c) {
   case 0x00 ... 0x1F:
@@ -107,6 +114,10 @@ U8 ExecD(GC* gc, U8 trapped) {
     if (j == 3)
       cli_InsertMem(gc, strtol(tokens[1], NULL, 16), strtol(tokens[2], NULL, 16));
     break;
+  case 's':
+    if (j == 2)
+      cli_DisplayStack(gc, strtol(tokens[1], NULL, 16));
+    break;
   case 'h':
     puts("gc24 cli help:");
     puts("  c       Clear the screen");
@@ -114,6 +125,7 @@ U8 ExecD(GC* gc, U8 trapped) {
     puts("  m <00>  Dump memory");
     puts("  r       Dump registers");
     puts("  R       Run the program");
+    puts("  s       Dump the stack");
     puts("  q       Quit");
     break;
   default:
