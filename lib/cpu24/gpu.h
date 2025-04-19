@@ -84,3 +84,25 @@ U0 (*GGPAGE[2])(GC*) = {&GGpage_CGA16, &GGpage_RGB555LE};
 U0 GGpage(GC* gc) {
   GGPAGE[gc->mem[0x49FF00]%2](gc);
 }
+
+// PPU functions
+U0 GGsprite_256(GC* gc) {
+  U32 to = gc->reg[0x04].word; // SI
+  U32 from = gc->reg[0x05].word; // GI
+  for (U8 y = 0; y < 8; y++) {
+    for (U8 x = 0; x < 8; x++) {
+      gc->mem[to+(y*640)+x] = gc->mem[from+(y*8)+x];
+    }
+  }
+}
+
+U0 GGsprite_mono(GC* gc) {
+  U32 to = gc->reg[0x04].word; // SI
+  U32 from = gc->reg[0x05].word; // GI
+  U8 color = gc->reg[0x00].word; // AX
+  for (U8 y = 0; y < 8; y++) {
+    for (U8 x = 0; x < 8; x++) {
+      gc->mem[to+(y*640)+x] = color*((gc->mem[from+y] & (1<<(7-x))) >> (7-x));
+    }
+  }
+}

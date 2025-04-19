@@ -270,6 +270,12 @@ U8 INT(GC* gc) {
   case INT_VIDEO_CLEAR:
     GGflush(gc);
     break;
+  case INT_PPU_DRAW:
+    GGsprite_256(gc);
+    break;
+  case INT_PPU_DRAWM:
+    GGsprite_mono(gc);
+    break;
   case INT_RAND:
     gc->reg[DX].word = rand() % 65536;
     break;

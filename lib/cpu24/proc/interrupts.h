@@ -8,6 +8,11 @@
 // Videobuffer
 #define INT_VIDEO_FLUSH  0x11 // flush the videobuffer
 #define INT_VIDEO_CLEAR  0x12 // clear the videobuffer
+#define INT_PPU_DRAW     0x13 // draw a 256-color palette sprite to videobuffer
+#define INT_PPU_DRAWM    0x14 // draw a 2-color palette sprite to videobuffer
+
 #define INT_RAND         0x21 // get random number to dx
 #define INT_WAIT         0x22 // wait dx milliseconds
+
+// SPU
 #define INT_BEEP         0x23 // play beep sound with frequency from stack
