@@ -18,5 +18,5 @@ memsub.loop	A000D3
 memsub.sub	A000E0
 dmemcpy	A000E8
 dmemcpy.loop	A000E9
-kmain	A000F3
-krnl_bksp_seq	A000F4
+kmain	A000F2
+krnl_bksp_seq	A000F3

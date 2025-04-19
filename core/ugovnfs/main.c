@@ -74,7 +74,6 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
   fseek(fl, 0, SEEK_SET);
 
   uint16_t slos = getLastOccupiedSector(disk);
-  // Calculate the number of sectors needed
   uint32_t numSectors = (flsize + 493) / 494; // 494 bytes per sector
   printf("File size: \033[93m%03u\033[0m B, \033[93m%u\033[0m S\t", flsize, numSectors);
 
@@ -91,8 +90,8 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
   uint8_t buffer[494];
 
   while (bytesWritten < flsize) {
-    size_t toRead = (flsize - bytesWritten > 494) ? 494 : (flsize - bytesWritten);
-    fread(buffer, 1, toRead, fl);
+    // size_t toRead = (flsize - bytesWritten > 494) ? 494 : (flsize - bytesWritten);
+    fread(buffer, 1, 494, fl);
 
     // Link
     if (bytesWritten > 0) {
@@ -102,25 +101,23 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
     }
 
     if (bytesWritten == 0) {
-      memcpy(disk + currentSector * 512 + 16, buffer, toRead);
+      memcpy(disk + currentSector * 512 + 16, buffer, 494);
     }
     else {
       disk[currentSector * 512] = 0x02;
       memset(disk + currentSector * 512 + 1, 0, 15);
-      memcpy(disk + currentSector * 512 + 16, buffer, toRead);
+      memcpy(disk + currentSector * 512 + 16, buffer, 494);
     }
-
-    bytesWritten += toRead;
+    bytesWritten += 494;
   }
 
-  disk[currentSector * 512 + 0xFF] = 0x00;
-  disk[currentSector * 512 + 0xFE] = 0x00;
+  disk[currentSector * 512 + 0x1FF] = 0x00;
+  disk[currentSector * 512 + 0x1FE] = 0x00;
   uint16_t nlos = getLastOccupiedSector(disk)+1;
   if (nlos >= slos) { // Fuck we erased the signature
     disk[nlos*512] = 0xF7;
   }
 
-  fclose(fl);
   return 0;
 }
 
@@ -174,7 +171,7 @@ int main(int argc, char** argv) {
     ugovnfs_errno = readFilenames(disk, disk[0x10]);
   }
   else if (!strcmp(argv[1], "-c")) {
-    // ugovnfs -c disk.img file.bin "file"   "com"
+    // ugovnfs -c          disk.img file.bin "file"   "com"
     ugovnfs_errno = writeFile(disk, argv[3], argv[4], argv[5]);
     fwrite(disk, 1, flsize, fl);
     printf("\033[92msuccess\033[0m\n");

@@ -227,8 +227,6 @@ gfs2_read_file:
   pop %gi
   cmp %ax $00
   je flcpy
-  ; this code is unreachable if %ax == $00
-
   inx %dx
   mov %si %dx
   mul %si $0200

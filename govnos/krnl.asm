@@ -130,7 +130,6 @@ dmemcpy:
   inx %si
   stob %gi %ax
   loop .loop
-  trap
   ret
 
 ; kmain executes when the kernel loads
