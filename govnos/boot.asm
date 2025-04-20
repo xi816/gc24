@@ -154,7 +154,7 @@ b_puti_clr:
   ret
 b_puti_buf: reserve 8 bytes
 
-scani:
+b_scani:
   mov %ax $00
 .loop:
   int $01
@@ -357,12 +357,6 @@ shell:
   je govnos_cls
 
   mov %si command
-  mov %gi com_calc
-  call b_strcmp
-  cmp %ax $00
-  je govnos_calc
-
-  mov %si command
   mov %gi com_help
   call b_strcmp
   cmp %ax $00
@@ -456,75 +450,6 @@ govnos_echo:
   push $0A
   int 2
   jmp shell.aftexec
-govnos_calc:
-  ; First number
-  mov %si calc_00
-  int $81
-  call scani
-
-  ; Second number
-  mov %si calc_01
-  push %ax
-  int $81
-  call scani
-  mov %bx %ax
-  pop %ax
-
-  ; Operation
-  mov %si calc_02
-  push %ax
-  int $81
-  pop %ax
-  int $01
-  pop %cx
-  push %cx
-  int $02
-  push '$'
-  int 2
-
-  cmp %cx '+'
-  je .add
-  cmp %cx '-'
-  je .sub
-  cmp %cx '*'
-  je .mul
-  cmp %cx '/'
-  je .div
-  jmp .unk
-.add:
-  add %ax %bx
-  call b_puti
-  push '$'
-  int $02
-  jmp shell.aftexec
-.sub:
-  sub %ax %bx
-  call b_puti
-  push '$'
-  int $02
-  jmp shell.aftexec
-.mul:
-  mul %ax %bx
-  call b_puti
-  push '$'
-  int $02
-  jmp shell.aftexec
-.div:
-  cmp %bx $00
-  je .div_panic
-  div %ax %bx
-  call b_puti
-  push '$'
-  int $02
-  jmp shell.aftexec
-.div_panic:
-  mov %si calc_04
-  int $81
-  jmp shell.aftexec
-.unk:
-  mov %si calc_03
-  int $81
-  jmp shell.aftexec
 
 welcome_msg:   bytes "Welcome to ^[[92mGovnOS^[[0m$^@"
 krnl_load_msg: bytes "Loading ^[[92m:/krnl.bin/com^[[0m...$^@"
@@ -545,18 +470,11 @@ help_msg:    bytes "+------------------------------------------+$"
 
 com_hi:      bytes "hi^@"
 com_cls:     bytes "cls^@"
-com_calc:    bytes "calc^@"
 com_date:    bytes "date^@"
 com_help:    bytes "help^@"
 com_echo:    bytes "echo "
 com_exit:    bytes "exit^@"
 hai_world:   bytes "hai world :3$^@"
-
-calc_00:     bytes "Enter first number: ^@"
-calc_01:     bytes "$Enter second number: ^@"
-calc_02:     bytes "$Enter operation [+-*/]: ^@"
-calc_03:     bytes "Unknown operation. Make sure you typed +, -, *, /$^@"
-calc_04:     bytes "Division by 0 has been blocked by Pythagoras$^@"
 
 env_HOST:    bytes "GovnPC 24 Super Edition^@"
 env_OS:      bytes "GovnOS 0.3.0 For GovnoCore24^@"
