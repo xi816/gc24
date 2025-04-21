@@ -23,7 +23,7 @@ memsub.sub	A0013A
 dmemcpy	A00142
 dmemcpy.loop	A00143
 krnl_panic	A0014C
-kmain	A0015E
-krnl_bksp_seq	A0015F
-krnl_panic00	A00163
-krnl_show_cursor	A003DA
+kmain	A0015D
+krnl_bksp_seq	A0015E
+krnl_panic00	A00162
+krnl_show_cursor	A003D9

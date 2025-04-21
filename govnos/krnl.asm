@@ -177,7 +177,6 @@ krnl_panic:
   pop %dx
   mov %si krnl_show_cursor
   int $81
-  trap
   hlt
 
 ; kmain executes when the kernel loads
@@ -200,4 +199,4 @@ krnl_panic00:  bytes "^[[44m^[[H^[[2J^[[?25l$"
                bytes "or software. Do not change BIOS if you don't know how to do it properly.$$"
                bytes "Press any key to shut down"
                bytes "^@"
-krnl_show_cursor: bytes "^[[?25h^@"
+krnl_show_cursor: bytes "^[[0m^[[H^[[2J^[[?25h^@"

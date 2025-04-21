@@ -2,8 +2,6 @@
    BIOS is loaded into $700000 in memory.
 */
 
-; This is just a test, don't expect it to run with no bugs
-
 GovnBIOSReset: jmp GovnBIOS
 ; Interrupt $81 -- Output a string
 puts:
@@ -45,6 +43,8 @@ GovnBIOS:
   jmp $030000 ; Jump to the boot sector loaded
               ; from the primary disk
 .term:
+  mov %si CLEARSCR_BOOT
+  int $81
   mov %si CURSOR_SHOW
   int $81
   hlt

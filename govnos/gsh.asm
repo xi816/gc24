@@ -35,7 +35,28 @@ gshShell:
   cmp %ax $00
   je gshHi
 
+  mov %si file_header
+  mov %cx 16
+  call b_memset
+  mov %si command
+  mov %gi file_header
+  inx %gi
+  call b_strcpy
+  mov %si file_tag
+  mov %gi file_header
+  add %gi 13
+  mov %cx 3
+  call b_memcpy
+
+  mov %bx file_header
+  mov %gi $200000
+  call gfs2_read_file
+  cmp %ax $00
+  je .call
   jmp gshBadComm
+.call:
+  call $200000
+  jmp gshAftexec
 gshHi:
   mov %si gshHw
   int $81
@@ -47,7 +68,7 @@ gshHelp:
 gshExit:
   ret
 gshBadComm:
-  push '"'
+  push '"' ; "
   int $02
   mov %si gshCommand
   int $81

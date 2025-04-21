@@ -90,8 +90,8 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
   uint8_t buffer[494];
 
   while (bytesWritten < flsize) {
-    // size_t toRead = (flsize - bytesWritten > 494) ? 494 : (flsize - bytesWritten);
-    fread(buffer, 1, 494, fl);
+    size_t toRead = (flsize - bytesWritten > 494) ? 494 : (flsize - bytesWritten);
+    fread(buffer, 1, toRead, fl);
 
     // Link
     if (bytesWritten > 0) {
@@ -101,12 +101,12 @@ uint8_t writeFile(uint8_t* disk, uint8_t* filename, uint8_t* g_filename, uint8_t
     }
 
     if (bytesWritten == 0) {
-      memcpy(disk + currentSector * 512 + 16, buffer, 494);
+      memcpy(disk + currentSector * 512 + 16, buffer, toRead);
     }
     else {
       disk[currentSector * 512] = 0x02;
       memset(disk + currentSector * 512 + 1, 0, 15);
-      memcpy(disk + currentSector * 512 + 16, buffer, 494);
+      memcpy(disk + currentSector * 512 + 16, buffer, toRead);
     }
     bytesWritten += 494;
   }

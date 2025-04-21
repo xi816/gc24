@@ -253,6 +253,7 @@ flcpy: ; %dx should already contain file's start sector
   inx %si
   stob %gi %ax
   loop .loop
+  ; inx %si
   ldds
   mov %bx %ax
   inx %si
@@ -265,7 +266,7 @@ flcpy: ; %dx should already contain file's start sector
   mul %si $200
   add %si 16
   mov %cx 494
-  dex %cx
+  ; dex %cx
   loop .loop
 .end:
   mov %ax $00
@@ -477,7 +478,7 @@ com_exit:    bytes "exit^@"
 hai_world:   bytes "hai world :3$^@"
 
 env_HOST:    bytes "GovnPC 24 Super Edition^@"
-env_OS:      bytes "GovnOS 0.3.0 For GovnoCore24^@"
+env_OS:      bytes "GovnOS 0.3.1 For GovnoCore24^@"
 env_CPU:     bytes "Govno Core 24$^@"
 
 ; TODO: unhardcode file header TODO: remove this todo
