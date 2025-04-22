@@ -35,13 +35,14 @@ int32_t main(int argc, char** argv) {
     system("gcc core/ball.c -o ball");
     for (uint16_t i = 0; i < ptrlen(targets); i++) {
       printf("building %s%s%s\n", color, targets[i], rcolor);
+      fflush(stdout);
       system(build_commands[i]);
     }
     return 0;
   }
   else if ((argc == 2) && (!strcmp(argv[1], "install"))) {
     for (uint16_t i = 0; i < ptrlen(itargets); i++) {
-      printf("installing %s%s%s\n", color, itargets[i], rcolor);
+      printf("installing %s%s%s", color, itargets[i], rcolor);
       system(install_commands[i]);
     }
     return 0;
