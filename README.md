@@ -1,5 +1,5 @@
 # English
-
+No shit use https://github.com/xi816/gc32
 # GC24 - An emulator for the Govno Core 24 processor
 
 ## Description
